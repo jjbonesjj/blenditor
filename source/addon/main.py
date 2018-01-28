@@ -92,3 +92,5 @@ def unregister():
 if __name__ == "__main__":
     register()
     print("main")
+    import convexify;
+    convexify.hello_world();

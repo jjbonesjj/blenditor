@@ -16,7 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-MAIN=source/main.py
+MAIN=source/addon/main.py
 DATA=data/test.blend
 
 COMMAND=$1
