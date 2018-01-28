@@ -2,21 +2,23 @@
 
 #include "convexify.h"
 
-static PyObject* hello_world(PyObject* self, PyObject* args)
+static PyObject* helloWorld(PyObject* self, PyObject* args)
 {
 	const char *command;
 	int sts;
 
-	if (!PyArg_ParseTuple(args, "s", &command))
-		return NULL;
-	sts = system(command);
-	return PyLong_FromLong(sts);
+	// if (!PyArg_ParseTuple(args, "s", &command))
+		// return NULL;
+	// sts = system(command);
+	printf("hello convexified world!");
+
+	return PyLong_FromLong(1);
 }
 
 static PyMethodDef convexifyMethods[] = {
 	{
-		"hello_world", hello_world, METH_VARARGS,
-		"Print 'hello world' from a method defined in a C extension."
+		"helloWorld", helloWorld, METH_NOARGS,
+		"prints out \"Hello Convexified World\""
 	},
 	{ NULL, NULL, 0, NULL }
 };
@@ -38,10 +40,5 @@ PyMODINIT_FUNC PyInit_convexify()
 
 int main(int argc, const char* argv[])
 {
-    /*Py_SetProgramName(argv[0]);
-
-	Py_Initialize();
-
-	PyInit_convexify();*/
 	return import_call_execute(argc, argv);
 }
