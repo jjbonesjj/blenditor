@@ -1,5 +1,6 @@
 #visual studio code
 */.vs/*
+*.vs*
 
 # Prerequisites
 *.d
@@ -99,7 +100,10 @@ bld/
 
 #python
 */__pycache__/*
+*__pycache__*
 
 #cmake
 CMakeFiles/*
 *.cmake
+CMakeCache.txt
+
