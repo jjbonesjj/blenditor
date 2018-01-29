@@ -1,0 +1,1 @@
+cmake -G "Visual Studio 15 2017 Win64" -D CMAKE_C_COMPILER=gcc-4.2 -D CMAKE_CXX_COMPILER=g++-4.2 .
