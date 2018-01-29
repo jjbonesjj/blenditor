@@ -46,8 +46,8 @@ int main(int argc, const char** argv)
 	const char* arguments[] =
 	{
 		argv[0],
-		"D:/src/blenditor/source/convexify/",
-		"test",
+		"./built/",
+		"__init__",
 		"test",
 	};
 	return import_call_execute(numArguments, arguments);
