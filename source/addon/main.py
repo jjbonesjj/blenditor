@@ -25,6 +25,15 @@ bl_info = {
     "category": "Development"
 }
 import bpy;
+import sys;
+print(sys.version_info)
+sys.path.append("./intern/");
+print(sys.path);
+import os 
+dirPath = os.path.dirname(os.path.realpath(__file__))
+print(dirPath);
+sys.path.append(dirPath + "\\intern\\");
+import convexify;
 
 class ExportLevel(bpy.types.Operator):
     """Export Level"""
@@ -92,5 +101,4 @@ def unregister():
 if __name__ == "__main__":
     register()
     print("main")
-    import convexify;
     convexify.hello_world();

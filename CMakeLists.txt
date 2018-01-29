@@ -37,9 +37,9 @@ include_directories(SYSTEM "source/convexify/extern/python/include/")
 
 # external libraries
 add_library(Python STATIC IMPORTED GLOBAL)
-set_property(TARGET Python PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/source/convexify/extern/python/python37.lib")
+set_property(TARGET Python PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/source/convexify/extern/python/python35.lib")
 add_library(Python_d STATIC IMPORTED GLOBAL)
-set_property(TARGET Python_d PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/source/convexify/extern/python/python37_d.lib")
+set_property(TARGET Python_d PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/source/convexify/extern/python/python35_d.lib")
 
 # configure output location
 set(EXE_OUTPUT_DIR ${CMAKE_BINARY_DIR}/built)
