@@ -15,14 +15,12 @@ set (CONVEXIFY_VERSION_MAJOR 0)
 set (CONVEXIFY_VERSION_MINOR 0)
 set (CONVEXIFY_VERSION_PATCH 1)
 
-# aux_source_directory(source/convexify, convexify_source)
-# include_directories(source/convexify/extern/*)
-
-# add_library(objects OBJECT ${convexify_source})
+add_library(convexifyDLL SHARED
+            test.cpp)
 
 add_executable(convexifyEXE test.cpp)
-add_custom_target(  convexifyDLL ALL
-                    SOURCES test.cpp)
+
+target_link_libraries(convexifyEXE convexifyDLL)
 
 set_target_properties(convexifyEXE PROPERTIES OUTPUT_NAME convexify.exe)
 set_target_properties(convexifyDLL PROPERTIES OUTPUT_NAME convexify.pyd)
