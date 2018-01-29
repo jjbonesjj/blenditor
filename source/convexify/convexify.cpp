@@ -12,7 +12,7 @@ static PyObject* helloWorld(PyObject* self, PyObject* args)
 	// sts = system(command);
 	printf("hello convexified world!");
 
-	return PyLong_FromLong(1);
+	return PyUnicode_FromString("hello convexified world!");
 }
 
 static PyMethodDef convexifyMethods[] = {

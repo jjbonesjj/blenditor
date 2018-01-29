@@ -100,5 +100,4 @@ def unregister():
 # to test the addon without having to install it.
 if __name__ == "__main__":
     register()
-    print("main")
-    convexify.hello_world();
+    print(convexify.helloWorld());
