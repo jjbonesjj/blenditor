@@ -38,7 +38,21 @@ PyMODINIT_FUNC PyInit_convexify()
 	return PyModule_Create(&moduleDefinition);
 }
 
-int main(int argc, const char* argv[])
+int main(int argc, const char** argv)
 {
+	// setup some default arguments, since cmake does not support them.
+#ifdef _DEBUG
+	int numArguments = 4;
+	const char* arguments[] =
+	{
+		argv[0],
+		"D:/src/blenditor/source/convexify/",
+		"test",
+		"test",
+	};
+	return import_call_execute(numArguments, arguments);
+#else
 	return import_call_execute(argc, argv);
+#endif
+
 }
