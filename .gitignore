@@ -73,6 +73,8 @@ ipch/
 *.pidb
 *.svclog
 *.scc
+*.sln
+*.vcxproj*
 
 # Build results
 [Dd]ebug/
@@ -97,3 +99,7 @@ bld/
 
 #python
 */__pycache__/*
+
+#cmake
+CMakeFiles/*
+*.cmake
