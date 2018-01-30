@@ -4,21 +4,52 @@
 
 static PyObject* helloWorld(PyObject* self, PyObject* args)
 {
-	const char *command;
-	int sts;
+	printf("printf: hello convexified world!");
 
-	// if (!PyArg_ParseTuple(args, "s", &command))
-		// return NULL;
-	// sts = system(command);
-	printf("hello convexified world!");
+	return PyUnicode_FromString("return: hello convexified world!");
+}
 
-	return PyUnicode_FromString("hello convexified world!");
+static PyObject* convexifyMesh(PyObject* self, PyObject* list)
+{
+	// char* meshData;
+	// int size;
+	
+	if (PyList_Check(list))
+	{
+		for (int i = 0; i < PyList_GET_SIZE(list); i++)
+		{
+			static char* keywordList[] = { "co", "x", nullptr };
+			float co[4] = {};
+
+			PyObject* vertexObj = PyList_GetItem(list, i);
+			// if(!PyArg_ParseTupleAndKeywords(vertexObj, )
+		}
+
+		return PyUnicode_FromString("success");
+	}
+	
+
+	return PyUnicode_FromString("failure");
+}
+
+struct Vertex
+{
+	float a[3];
+};
+
+extern "C" static int convexifyMeshRaw()
+{
+	return 12345;
 }
 
 static PyMethodDef convexifyMethods[] = {
 	{
 		"helloWorld", helloWorld, METH_NOARGS,
 		"prints out \"Hello Convexified World\""
+	},
+	{
+		"convexifyMesh", convexifyMesh, METH_VARARGS,
+		"attempts to conexify a mesh"
 	},
 	{ NULL, NULL, 0, NULL }
 };
@@ -34,7 +65,6 @@ static struct PyModuleDef moduleDefinition =
 
 PyMODINIT_FUNC PyInit_convexify()
 {
-	printf("importing");
 	return PyModule_Create(&moduleDefinition);
 }
 
