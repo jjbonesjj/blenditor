@@ -26,14 +26,13 @@ bl_info = {
 }
 import bpy;
 import sys;
-print(sys.version_info)
-sys.path.append("./intern/");
-print(sys.path);
 import os 
 dirPath = os.path.dirname(os.path.realpath(__file__))
-print(dirPath);
+print(dirPath)
 sys.path.append(dirPath + "\\intern\\");
 import convexify;
+import pprint;
+from ctypes import *;
 
 class ExportLevel(bpy.types.Operator):
     """Export Level"""
@@ -47,25 +46,20 @@ class ExportLevel(bpy.types.Operator):
         obj = bpy.context.active_object
         mesh = obj.data
 
-        filepath_out = "D:/src/blenditor/data/single_line.cyl"
-        with open(filepath_out, 'w') as ofile:
-            print("hello")
-            begin = "OBJ File: \n"
-            ofile.write(begin)
+        Point = c_float * 3;
+        vertexArray = (Point * len(mesh.vertices))()
+        for i in range(mesh.vertices):
+            coord = mesh.vertices[i]
+            point = Point(coord.x, coord.y, coord.z)
+            vertexArray[i] = point;
 
-            for v in mesh.vertices:
-                line = "v {v.x:.8f} {v.y:.8f} {v.z:.8f} \n"
-                line = line.format(v=v.co)
-                ofile.write(line)
+        print("calling convexifyMesh")
+        pprint.pprint(mesh)
+        print(mesh)
+        print(mesh.vertices[0])
 
-            for f in mesh.polygons:
-                line = "{0} {1} \n"
-                # obj vertex indices for faces start at 1 not 0 like blender.
-                indices = [str(i+1) for i in f.vertices[:]]
-                line = line.format("f", ' '.join(indices))
-                ofile.write(line)
-            
-            ofile.write("\n")
+        print(convexify.convexifyMesh(vertexArray))
+        print("finished calling convexifyMesh")
 
         return {'FINISHED'} # tell blender success
 
@@ -100,4 +94,15 @@ def unregister():
 # to test the addon without having to install it.
 if __name__ == "__main__":
     register()
-    print(convexify.helloWorld());
+    print("1")
+    cdll.LoadLibrary("testing.dll");
+    print("2")
+    conv = CDLL("testing.dll");
+    print("3")
+    print(conv)
+    print("\n\n\n")
+    val = conv.convexifyStuff();
+    print("4")
+    print(val)
+
+    ExportLevel.execute(None, None)
