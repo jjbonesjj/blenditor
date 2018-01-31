@@ -32,14 +32,47 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* list)
 	return PyUnicode_FromString("failure");
 }
 
-struct Vertex
+struct Point
 {
-	float a[3];
+	float x;
+	float y;
+	float z;
 };
 
-extern "C" static int convexifyMeshRaw()
+extern "C" __declspec(dllexport) int paramless()
 {
 	return 12345;
+}
+
+extern "C" __declspec(dllexport) int piper(int piped)
+{
+	return piped;
+}
+
+extern "C" __declspec(dllexport) char* passArray(int* arr, int size)
+{
+	if (arr)
+	{
+		arr[size - 1] = 0;
+		char* bleh = (char*)arr;
+		return bleh;
+	}
+	return nullptr;
+}
+
+extern "C" __declspec(dllexport) Point sumPointArray(Point* arr, int size)
+{
+	Point sum = {};
+	if (arr)
+	{
+		for (int i = 0; i < size; i++)
+		{
+			sum.x += arr[i].x;
+			sum.y += arr[i].y;
+			sum.z += arr[i].z;
+		}
+	}
+	return sum;
 }
 
 static PyMethodDef convexifyMethods[] = {
