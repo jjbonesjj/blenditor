@@ -90,19 +90,42 @@ def unregister():
 
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
 
+class Point(Structure):
+    _fields_ = [
+        ("x", c_float),
+        ("y", c_float),
+        ("z", c_float)
+    ]
+
 # This allows you to run the script directly from blenders text editor
 # to test the addon without having to install it.
 if __name__ == "__main__":
     register()
     print("1")
-    cdll.LoadLibrary("testing.dll");
     print("2")
-    conv = CDLL("testing.dll");
+    conv = CDLL("convexify.pyd");
     print("3")
     print(conv)
     print("\n\n\n")
-    val = conv.convexifyStuff();
+    val = conv.paramless();
     print("4")
     print(val)
+    print("piped is: ")
+    print(conv.piper(3))
 
-    ExportLevel.execute(None, None)
+    SillyArray = c_int * 5;
+    passArray = conv.passArray;
+    passArray.restype = c_char_p;
+    array = SillyArray(0x41424344, 0x45464748, 0x45464748, 0x49505152, 0x53545556);
+    string = passArray(byref(array), len(array));
+    print("string is :")
+    print(string)
+
+    Points = Point * 3;
+    points = Points((1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (1.0, 2.0, 3.0))
+    sumPointArray = conv.sumPointArray;
+    sumPointArray.restype = Point;
+    theSum = sumPointArray(byref(points), len(points));
+    print("point sum is: {} {} {}".format(theSum.x, theSum.y, theSum.z))
+
+    #ExportLevel.execute(None, None)
