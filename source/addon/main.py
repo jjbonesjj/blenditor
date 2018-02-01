@@ -54,20 +54,15 @@ class ExportLevel(bpy.types.Operator):
         obj = bpy.context.active_object
         mesh = obj.data
 
-        print(dir(mesh.vertices))
-
         vertexArray = (Point * len(mesh.vertices))()
         for index, vert in enumerate(mesh.vertices):
             coord = vert.co
             point = Point(coord.x, coord.y, coord.z)
             vertexArray[index] = point;
 
-        print("calling convexifyMesh")
-        print(mesh)
-        print(mesh.vertices[0])
-
-        print("result of convexifying: ")
-        print(convexify.convexifyMesh(byref(vertexArray), len(vertexArray)))
+        convexify.convexifyMesh.restype = c_bool
+        result = convexify.convexifyMesh(byref(vertexArray), len(vertexArray))
+        print("result is ", result)
         print("finished calling convexifyMesh")
 
         return {'FINISHED'} # tell blender success
@@ -103,6 +98,7 @@ def unregister():
 # to test the addon without having to install it.
 if __name__ == "__main__":
     register()
+if __name__ == "__main__" and bpy.app.background:
     print("1")
     print("2")
     print("3")
