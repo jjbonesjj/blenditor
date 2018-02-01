@@ -107,3 +107,7 @@ CMakeFiles/*
 *.cmake
 CMakeCache.txt
 
+*/extern/*
+*/extern*
+*extern/*
+*extern*
