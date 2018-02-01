@@ -1,3 +1,15 @@
 #!/bin/bash
 
 cmake -G "Visual Studio 15 2017 Win64" -T host=x64 .
+
+#cgal
+export BOOST_ROOT="./auxiliary/boost/"
+cd /source/convexify/extern/cgal
+cmake -G "Visual Studio 15 2017 Win64" -T host=x64 \
+    -D WITH_GMP=1 \
+    -D GMP_INCLUDE_DIR="./auxiliary/gmp/include" \
+    -D GMP_LIBRARIES="./auxiliary/gmp/lib/libgmp.lib" \
+    -D WITH_MPFR=1 \
+    -D MPFR_INCLUDE_DIR="./auxiliary/gmp/include" \
+    -D MPFR_LIBRARIES="./auxiliary/gmp/lib/libmpfr.lib" \
+    .
