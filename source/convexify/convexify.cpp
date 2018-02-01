@@ -11,15 +11,20 @@ static PyObject* helloWorld(PyObject* self, PyObject* args)
 
 
 
-EXPORT int convexifyMesh(Point* vertexPoints, int vertexPointsSize)
+EXPORT bool convexifyMesh(Point* vertexPoints, int vertexPointsSize)
 {
 	
 	if (vertexPoints)
 	{
-		return 1;
+		for (int i = 0; i < vertexPointsSize; i++)
+		{
+			
+		}
+
+		return true;
 	}
 
-	return 0;
+	return false;
 }
 
 
