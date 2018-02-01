@@ -30,9 +30,17 @@ import os
 dirPath = os.path.dirname(os.path.realpath(__file__))
 print(dirPath)
 sys.path.append(dirPath + "\\intern\\");
-import convexify;
-import pprint;
 from ctypes import *;
+# need to both import AND use ctypes.CDLL? dafuq?
+import convexify;
+convexify = CDLL("convexify.pyd");
+
+class Point(Structure):
+    _fields_ = [
+        ("x", c_float),
+        ("y", c_float),
+        ("z", c_float)
+    ]
 
 class ExportLevel(bpy.types.Operator):
     """Export Level"""
@@ -46,19 +54,20 @@ class ExportLevel(bpy.types.Operator):
         obj = bpy.context.active_object
         mesh = obj.data
 
-        Point = c_float * 3;
+        print(dir(mesh.vertices))
+
         vertexArray = (Point * len(mesh.vertices))()
-        for i in range(mesh.vertices):
-            coord = mesh.vertices[i]
+        for index, vert in enumerate(mesh.vertices):
+            coord = vert.co
             point = Point(coord.x, coord.y, coord.z)
-            vertexArray[i] = point;
+            vertexArray[index] = point;
 
         print("calling convexifyMesh")
-        pprint.pprint(mesh)
         print(mesh)
         print(mesh.vertices[0])
 
-        print(convexify.convexifyMesh(vertexArray))
+        print("result of convexifying: ")
+        print(convexify.convexifyMesh(byref(vertexArray), len(vertexArray)))
         print("finished calling convexifyMesh")
 
         return {'FINISHED'} # tell blender success
@@ -90,31 +99,21 @@ def unregister():
 
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
 
-class Point(Structure):
-    _fields_ = [
-        ("x", c_float),
-        ("y", c_float),
-        ("z", c_float)
-    ]
-
 # This allows you to run the script directly from blenders text editor
 # to test the addon without having to install it.
 if __name__ == "__main__":
     register()
     print("1")
     print("2")
-    conv = CDLL("convexify.pyd");
     print("3")
-    print(conv)
-    print("\n\n\n")
-    val = conv.paramless();
+    val = convexify.paramless();
     print("4")
     print(val)
     print("piped is: ")
-    print(conv.piper(3))
+    print(convexify.piper(3))
 
     SillyArray = c_int * 5;
-    passArray = conv.passArray;
+    passArray = convexify.passArray;
     passArray.restype = c_char_p;
     array = SillyArray(0x41424344, 0x45464748, 0x45464748, 0x49505152, 0x53545556);
     string = passArray(byref(array), len(array));
@@ -123,9 +122,9 @@ if __name__ == "__main__":
 
     Points = Point * 3;
     points = Points((1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (1.0, 2.0, 3.0))
-    sumPointArray = conv.sumPointArray;
+    sumPointArray = convexify.sumPointArray;
     sumPointArray.restype = Point;
     theSum = sumPointArray(byref(points), len(points));
     print("point sum is: {} {} {}".format(theSum.x, theSum.y, theSum.z))
 
-    #ExportLevel.execute(None, None)
+    ExportLevel.execute(None, None)

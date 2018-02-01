@@ -9,47 +9,32 @@ static PyObject* helloWorld(PyObject* self, PyObject* args)
 	return PyUnicode_FromString("return: hello convexified world!");
 }
 
-static PyObject* convexifyMesh(PyObject* self, PyObject* list)
+
+
+EXPORT int convexifyMesh(Point* vertexPoints, int vertexPointsSize)
 {
-	// char* meshData;
-	// int size;
 	
-	if (PyList_Check(list))
+	if (vertexPoints)
 	{
-		for (int i = 0; i < PyList_GET_SIZE(list); i++)
-		{
-			static char* keywordList[] = { "co", "x", nullptr };
-			float co[4] = {};
-
-			PyObject* vertexObj = PyList_GetItem(list, i);
-			// if(!PyArg_ParseTupleAndKeywords(vertexObj, )
-		}
-
-		return PyUnicode_FromString("success");
+		return 1;
 	}
-	
 
-	return PyUnicode_FromString("failure");
+	return 0;
 }
 
-struct Point
-{
-	float x;
-	float y;
-	float z;
-};
 
-extern "C" __declspec(dllexport) int paramless()
+
+EXPORT int paramless()
 {
 	return 12345;
 }
 
-extern "C" __declspec(dllexport) int piper(int piped)
+EXPORT int piper(int piped)
 {
 	return piped;
 }
 
-extern "C" __declspec(dllexport) char* passArray(int* arr, int size)
+EXPORT char* passArray(int* arr, int size)
 {
 	if (arr)
 	{
@@ -60,7 +45,7 @@ extern "C" __declspec(dllexport) char* passArray(int* arr, int size)
 	return nullptr;
 }
 
-extern "C" __declspec(dllexport) Point sumPointArray(Point* arr, int size)
+EXPORT Point sumPointArray(Point* arr, int size)
 {
 	Point sum = {};
 	if (arr)
@@ -80,10 +65,10 @@ static PyMethodDef convexifyMethods[] = {
 		"helloWorld", helloWorld, METH_NOARGS,
 		"prints out \"Hello Convexified World\""
 	},
-	{
+	/*{
 		"convexifyMesh", convexifyMesh, METH_VARARGS,
 		"attempts to conexify a mesh"
-	},
+	},*/
 	{ NULL, NULL, 0, NULL }
 };
 
