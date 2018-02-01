@@ -34,6 +34,7 @@ file(GLOB SOURCES "source/convexify/*.cpp" "source/convexify/*.h")
 
 # add includes
 include_directories(SYSTEM "source/convexify/extern/python/include/")
+include_directories(SYSTEM "source/convexify/extern/cgal/Convex_decomposition_3/include")
 
 # external libraries
 add_library(Python STATIC IMPORTED GLOBAL)

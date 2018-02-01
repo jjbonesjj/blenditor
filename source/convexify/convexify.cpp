@@ -1,6 +1,7 @@
 #include "py_debug.h"
 
 #include "convexify.h"
+#include <CGAL/convex_decomposition_3.h>
 
 static PyObject* helloWorld(PyObject* self, PyObject* args)
 {
