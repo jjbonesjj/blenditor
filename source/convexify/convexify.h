@@ -4,7 +4,12 @@
 #include <Python.h>
 #define _DEBUG
 
-static PyObject* hello_world(PyObject* self, PyObject* args);
+// MUST MATCH PYTHON
+struct Point
+{
+	float x;
+	float y;
+	float z;
+};
 
-
-PyMODINIT_FUNC PyInit_Convexify();
+#define EXPORT extern "C" __declspec(dllexport)
