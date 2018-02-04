@@ -26,14 +26,21 @@ bl_info = {
 }
 import bpy;
 import sys;
-print(sys.version_info)
-sys.path.append("./intern/");
-print(sys.path);
 import os 
 dirPath = os.path.dirname(os.path.realpath(__file__))
-print(dirPath);
+print(dirPath)
 sys.path.append(dirPath + "\\intern\\");
+from ctypes import *;
+# need to both import AND use ctypes.CDLL? dafuq?
 import convexify;
+convexify = CDLL("convexify.pyd");
+
+class Point(Structure):
+    _fields_ = [
+        ("x", c_float),
+        ("y", c_float),
+        ("z", c_float)
+    ]
 
 class ExportLevel(bpy.types.Operator):
     """Export Level"""
@@ -47,25 +54,16 @@ class ExportLevel(bpy.types.Operator):
         obj = bpy.context.active_object
         mesh = obj.data
 
-        filepath_out = "D:/src/blenditor/data/single_line.cyl"
-        with open(filepath_out, 'w') as ofile:
-            print("hello")
-            begin = "OBJ File: \n"
-            ofile.write(begin)
+        vertexArray = (Point * len(mesh.vertices))()
+        for index, vert in enumerate(mesh.vertices):
+            coord = vert.co
+            point = Point(coord.x, coord.y, coord.z)
+            vertexArray[index] = point;
 
-            for v in mesh.vertices:
-                line = "v {v.x:.8f} {v.y:.8f} {v.z:.8f} \n"
-                line = line.format(v=v.co)
-                ofile.write(line)
-
-            for f in mesh.polygons:
-                line = "{0} {1} \n"
-                # obj vertex indices for faces start at 1 not 0 like blender.
-                indices = [str(i+1) for i in f.vertices[:]]
-                line = line.format("f", ' '.join(indices))
-                ofile.write(line)
-            
-            ofile.write("\n")
+        convexify.convexifyMesh.restype = c_bool
+        result = convexify.convexifyMesh(byref(vertexArray), len(vertexArray))
+        print("result is ", result)
+        print("finished calling convexifyMesh")
 
         return {'FINISHED'} # tell blender success
 
@@ -100,4 +98,29 @@ def unregister():
 # to test the addon without having to install it.
 if __name__ == "__main__":
     register()
-    print(convexify.helloWorld());
+if __name__ == "__main__" and bpy.app.background:
+    print("1")
+    print("2")
+    print("3")
+    val = convexify.paramless();
+    print("4")
+    print(val)
+    print("piped is: ")
+    print(convexify.piper(3))
+
+    SillyArray = c_int * 5;
+    passArray = convexify.passArray;
+    passArray.restype = c_char_p;
+    array = SillyArray(0x41424344, 0x45464748, 0x45464748, 0x49505152, 0x53545556);
+    string = passArray(byref(array), len(array));
+    print("string is :")
+    print(string)
+
+    Points = Point * 3;
+    points = Points((1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (1.0, 2.0, 3.0))
+    sumPointArray = convexify.sumPointArray;
+    sumPointArray.restype = Point;
+    theSum = sumPointArray(byref(points), len(points));
+    print("point sum is: {} {} {}".format(theSum.x, theSum.y, theSum.z))
+
+    ExportLevel.execute(None, None)

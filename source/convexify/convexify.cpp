@@ -4,15 +4,65 @@
 
 static PyObject* helloWorld(PyObject* self, PyObject* args)
 {
-	const char *command;
-	int sts;
+	printf("printf: hello convexified world!");
 
-	// if (!PyArg_ParseTuple(args, "s", &command))
-		// return NULL;
-	// sts = system(command);
-	printf("hello convexified world!");
+	return PyUnicode_FromString("return: hello convexified world!");
+}
 
-	return PyUnicode_FromString("hello convexified world!");
+
+
+EXPORT bool convexifyMesh(Point* vertexPoints, int vertexPointsSize)
+{
+	
+	if (vertexPoints)
+	{
+		for (int i = 0; i < vertexPointsSize; i++)
+		{
+			
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+
+
+EXPORT int paramless()
+{
+	return 12345;
+}
+
+EXPORT int piper(int piped)
+{
+	return piped;
+}
+
+EXPORT char* passArray(int* arr, int size)
+{
+	if (arr)
+	{
+		arr[size - 1] = 0;
+		char* bleh = (char*)arr;
+		return bleh;
+	}
+	return nullptr;
+}
+
+EXPORT Point sumPointArray(Point* arr, int size)
+{
+	Point sum = {};
+	if (arr)
+	{
+		for (int i = 0; i < size; i++)
+		{
+			sum.x += arr[i].x;
+			sum.y += arr[i].y;
+			sum.z += arr[i].z;
+		}
+	}
+	return sum;
 }
 
 static PyMethodDef convexifyMethods[] = {
@@ -20,6 +70,10 @@ static PyMethodDef convexifyMethods[] = {
 		"helloWorld", helloWorld, METH_NOARGS,
 		"prints out \"Hello Convexified World\""
 	},
+	/*{
+		"convexifyMesh", convexifyMesh, METH_VARARGS,
+		"attempts to conexify a mesh"
+	},*/
 	{ NULL, NULL, 0, NULL }
 };
 
@@ -34,7 +88,6 @@ static struct PyModuleDef moduleDefinition =
 
 PyMODINIT_FUNC PyInit_convexify()
 {
-	printf("importing");
 	return PyModule_Create(&moduleDefinition);
 }
 
