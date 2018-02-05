@@ -94,8 +94,24 @@ PyMODINIT_FUNC PyInit_convexify()
 	return PyModule_Create(&moduleDefinition);
 }
 
+
+typedef CORE::Expr Real;
+typedef CGAL::Simple_cartesian<Real> K;
+typedef CGAL::Delaunay_triangulation_2<K> DT;
+typedef K::Point_2 Point_2;
+
 int main(int argc, const char** argv)
 {
+	DT dt;
+	double two = 2;
+	Point_2 p(0, 0), q(std::sqrt(two), 1), r(0, 1);
+
+	dt.insert(p);
+	dt.insert(q);
+	dt.insert(r);
+
+	std::cout << dt << std::endl;
+
 	// setup some default arguments, since cmake does not support them.
 #ifdef _DEBUG
 	int numArguments = 4;
