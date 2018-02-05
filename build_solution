@@ -4,37 +4,38 @@ HEADER()
 {
     echo
     echo
-    echo ***************************************************************
+    echo "***************************************************************"
     echo $1
-    echo ***************************************************************
+    echo "***************************************************************"
     echo
     echo
 }
 
 
 INSTALL_ROOT=$PWD
-CGAL_ROOT=${INSTALL_ROOT}/external/cgal
+CGAL_ROOT=${INSTALL_ROOT}/external/cgal/
 export BOOST_ROOT=${CGAL_ROOT}/auxiliary/boost/
 
-HEADER "CONFIGURING"
+HEADER "BUILDING CGAL SOLUTION"
 
 cd $CGAL_ROOT
-# perform "cgal configuration" before actually generating the solution
+# generate the cgal solution
 cmake -G "Visual Studio 15 2017 Win64" -T host=x64 .
 cd $INSTALL_ROOT
 
-HEADER "BUILDING SOLUTION"
+HEADER "BUILDING BLENDITOR SOLUTION"
 
-
-#cd D:/src/blenditor/external/cgal/Kernel_23
+#cd D:/src/blenditor/external/Kernel_23
 cmake -G "Visual Studio 15 2017 Win64" -T host=x64 \
-    -D WITH_CGAL_Core=1 \
-    -D WITH_CGAL_Qt5=0 \
-    -D WITH_CGAL_ImageIO=0 \
-    -D WITH_GMP=1 \
+    -D BUILD_SHARED_LIBS=FALSE \
+    -D CGAL_DIR="${CGAL_ROOT}/external/cgal/" \
+    -D WITH_CGAL_Core=TRUE \
+    -D WITH_CGAL_Qt5=FALSE \
+    -D WITH_CGAL_ImageIO=FALSE \
+    -D WITH_GMP=TRUE \
     -D GMP_INCLUDE_DIR="${CGAL_ROOT}/auxiliary/gmp/include/" \
     -D GMP_LIBRARIES="${CGAL_ROOT}/auxiliary/gmp/lib/libgmp-10.lib" \
-    -D WITH_MPFR=1 \
+    -D WITH_MPFR=TRUE \
     -D MPFR_INCLUDE_DIR="${CGAL_ROOT}/auxiliary/gmp/include/" \
     -D MPFR_LIBRARIES="${CGAL_ROOT}/auxiliary/gmp/lib/libmpfr-4.lib" \
     -D BOOST_ROOT="${CGAL_ROOT}/auxiliary/boost/" \
