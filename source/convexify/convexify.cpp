@@ -1,6 +1,9 @@
 #include "py_debug.h"
 
 #include "convexify.h"
+#include <CGAL/CORE_Expr.h>
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Delaunay_triangulation_2.h>
 
 static PyObject* helloWorld(PyObject* self, PyObject* args)
 {
