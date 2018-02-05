@@ -58,4 +58,7 @@ cmake -G "Visual Studio 15 2017 Win64" -T host=x64 \
 # TODO: figure out how to make this dependency a lib instead of a dll...
 # copy the stupid dlls
 cp ${CGAL_ROOT}auxiliary/gmp/lib/libgmp-10.dll ./built/libgmp-10.dll
+cp ${CGAL_ROOT}auxiliary/gmp/lib/libgmp-10.dll ./source/addon/intern/libgmp-10.dll
+
 cp ${CGAL_ROOT}auxiliary/gmp/lib/libmpfr-4.dll ./built/libmpfr-4.dll
+cp ${CGAL_ROOT}auxiliary/gmp/lib/libmpfr-4.dll ./source/addon/intern/libmpfr-4.dll
