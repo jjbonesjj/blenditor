@@ -36,7 +36,6 @@ find_package(CGAL REQUIRED MODULE
 
 include( ${CGAL_USE_FILE} )
 
-
 include_directories (BEFORE "./external/include")
 
 # add source

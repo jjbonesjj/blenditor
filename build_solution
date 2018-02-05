@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e # exit on any failure
 
 HEADER()
 {
@@ -20,12 +21,6 @@ HEADER "BUILDING CGAL SOLUTION"
 
 cd $CGAL_ROOT
 # generate the cgal solution
-cmake -G "Visual Studio 15 2017 Win64" -T host=x64 .
-cd $INSTALL_ROOT
-
-HEADER "BUILDING BLENDITOR SOLUTION"
-
-#cd D:/src/blenditor/external/Kernel_23
 cmake -G "Visual Studio 15 2017 Win64" -T host=x64 \
     -D BUILD_SHARED_LIBS=FALSE \
     -D CGAL_DIR="${CGAL_ROOT}/external/cgal/" \
@@ -39,7 +34,27 @@ cmake -G "Visual Studio 15 2017 Win64" -T host=x64 \
     -D MPFR_INCLUDE_DIR="${CGAL_ROOT}/auxiliary/gmp/include/" \
     -D MPFR_LIBRARIES="${CGAL_ROOT}/auxiliary/gmp/lib/libmpfr-4.lib" \
     -D BOOST_ROOT="${CGAL_ROOT}/auxiliary/boost/" \
-    -D Boost_ROOT="${CGAL_ROOT}/auxiliary/boost/" \
     -D BOOST_INCLUDE_DIR="${CGAL_ROOT}/auxiliary/boost/boost/" \
-    -D Boost_INCLUDE_DIR="${CGAL_ROOT}/auxiliary/boost/boost/" \
     .
+cd $INSTALL_ROOT
+
+HEADER "BUILDING BLENDITOR SOLUTION"
+cmake -G "Visual Studio 15 2017 Win64" -T host=x64 \
+    -D BUILD_SHARED_LIBS=FALSE \
+    -D CGAL_DIR="${CGAL_ROOT}/external/cgal/" \
+    -D WITH_CGAL_Core=TRUE \
+    -D WITH_CGAL_Qt5=FALSE \
+    -D WITH_CGAL_ImageIO=FALSE \
+    -D WITH_GMP=TRUE \
+    -D GMP_INCLUDE_DIR="${CGAL_ROOT}/auxiliary/gmp/include/" \
+    -D GMP_LIBRARIES="${CGAL_ROOT}/auxiliary/gmp/lib/libgmp-10.lib" \
+    -D WITH_MPFR=TRUE \
+    -D MPFR_INCLUDE_DIR="${CGAL_ROOT}/auxiliary/gmp/include/" \
+    -D MPFR_LIBRARIES="${CGAL_ROOT}/auxiliary/gmp/lib/libmpfr-4.lib" \
+    -D BOOST_ROOT="${CGAL_ROOT}/auxiliary/boost/" \
+    -D BOOST_INCLUDE_DIR="${CGAL_ROOT}/auxiliary/boost/boost/" \
+    .
+
+# TODO: figure out how to make this dependency a lib instead of a dll...
+# copy the stupid dlls
+cp ${CGAL_ROOT}auxiliary/gmp/lib/libgmp-10.dll ./built/libgmp-10.dll
