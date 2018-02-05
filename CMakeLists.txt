@@ -29,7 +29,8 @@ set(CONVEXIFY_VERSION_PATCH 1)
 
 project(Convexify)
 
-#set(CGAL_DIR "./external/cgal/cmake/modules")
+set(CGAL_DIR "./external/cgal/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "./external/cgal/cmake/modules")
 find_package(CGAL REQUIRED MODULE
             COMPONENTS CORE)
 
