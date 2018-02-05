@@ -23,11 +23,20 @@ macro(set_out_dir dir)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${dir})
 endmacro()
 
-project(Convexify)
-
 set(CONVEXIFY_VERSION_MAJOR 0)
 set(CONVEXIFY_VERSION_MINOR 0)
 set(CONVEXIFY_VERSION_PATCH 1)
+
+project(Convexify)
+
+set(CGAL_DIR "./external/cgal/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "./external/cgal/cmake/modules")
+find_package(CGAL REQUIRED MODULE
+            COMPONENTS CORE)
+
+include( ${CGAL_USE_FILE} )
+
+include_directories (BEFORE "./external/include")
 
 # add source
 file(GLOB SOURCES "source/convexify/*.cpp" "source/convexify/*.h")
@@ -96,6 +105,8 @@ set_target_properties(  convexifyDLL PROPERTIES
 #link libraries to output binaries
 target_link_libraries(convexifyEXE Python)
 target_link_libraries(convexifyEXE Python_d)
+target_link_libraries(convexifyEXE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
 
 target_link_libraries(convexifyDLL Python)
 target_link_libraries(convexifyDLL Python_d)
+target_link_libraries(convexifyDLL ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})

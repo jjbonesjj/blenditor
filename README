@@ -1,0 +1,27 @@
+
+//*******************************************
+//building
+//*******************************************
+
+hopefully, there are only 4 steps to build:
+1. 
+    In the same folder as this README, use bash to
+    run build_solution.
+
+    ./build_solution
+
+2.
+    Go into the folder ./external/cgal/ and open up
+    CGAL.sln
+
+    right click on ALL_BUILD and build the entire solution
+
+3.
+    Go back to the same folder as this README, open up Convexify.sln 
+
+    right click on ALL_BUILD and build the entire solution
+
+4.
+    set convexifyEXE as the startup project and run it
+
+    f5
