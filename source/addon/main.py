@@ -24,16 +24,20 @@ bl_info = {
     "support": "TESTING",
     "category": "Development"
 }
+
 import bpy;
 import sys;
-import os 
+import os;
 dirPath = os.path.dirname(os.path.realpath(__file__))
 print(dirPath)
 sys.path.append(dirPath + "\\intern\\");
+sys.path.append(dirPath);
 from ctypes import *;
 # need to both import AND use ctypes.CDLL? dafuq?
 import convexify;
 convexify = CDLL("convexify.pyd");
+
+from blenditor import *;
 
 class Point(Structure):
     _fields_ = [
@@ -76,7 +80,8 @@ def menu_func_export(self, context):
 
 # wtb better synonym for class.
 breeds = (
-    ExportLevel,    
+    ExportLevel,
+    Blenditor    
 ) 
 
 def register():
