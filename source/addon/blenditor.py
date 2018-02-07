@@ -15,3 +15,21 @@
 
 import bpy;
 
+class Blenditor(bpy.types.Panel):
+    """Blenditor Main"""
+    bl_label="Blenditor";
+    bl_space_type="PROPERTIES";
+    bl_region_type="WINDOW";
+
+
+    def __init__(self):
+        print("init blenditor");
+
+    def draw(self, context):
+        print("drawing");
+        row = self.layout.row();
+        row.label(text="hello");
+
+
+     
+
