@@ -5,15 +5,21 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Nef_polyhedron_3.h>
-#include <CGAL/IO/Nef_polyhedron_iostream_3.h>
 #include <CGAL/Nef_3/SNC_indexed_items.h>
-#include <CGAL/convex_decomposition_3.h> 
+#include <CGAL/convex_decomposition_3.h>
+#include <CGAL/Exact_integer.h>
+#include <CGAL/Homogeneous.h>
+#include <CGAL/Nef_polyhedron_3.h>
 #include <list>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
-typedef CGAL::Polyhedron_3<Kernel> Polyhedron_3;
-typedef CGAL::Nef_polyhedron_3<Kernel, CGAL::SNC_indexed_items> Nef_polyhedron_3;
-typedef Nef_polyhedron_3::Volume_const_iterator Volume_const_iterator;
+
+typedef CGAL::Nef_polyhedron_3<Kernel, CGAL::SNC_indexed_items> Nef_polyhedron;
+typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
+// typedef CGAL::Nef_polyhedron_3<Kernel> Nef_polyhedron;
+
+typedef Kernel::Point_3 Point_3;
+typedef Nef_polyhedron::Volume_const_iterator Volume_const_iterator;
 
 static PyObject* helloWorld(PyObject* self, PyObject* args)
 {
@@ -22,21 +28,48 @@ static PyObject* helloWorld(PyObject* self, PyObject* args)
 	return PyUnicode_FromString("return: hello convexified world!");
 }
 
-
-
 EXPORT bool convexifyMesh(Point* vertexPoints, int vertexPointsSize)
 {
+	printf("STARTING CONVEXIFY\n");
+	printf("there are %i vertexes\n", vertexPointsSize);
 	
 	if (vertexPoints)
 	{
+		Point_3* points = new Point_3[vertexPointsSize];
 		for (int i = 0; i < vertexPointsSize; i++)
 		{
-			
+			points[i] = Point_3(vertexPoints[i].x,
+								vertexPoints[i].y,
+								vertexPoints[i].z);
+			printf("{ %f, %f, %f }", vertexPoints[i].x, vertexPoints[i].y, vertexPoints[i].z);
+			//printf("{ %f, %f, %f }\n", points[i].x, points[i].y, points[i].z);
 		}
+		printf("\n\n");
 
+		Nef_polyhedron nef(points, points + vertexPointsSize, Nef_polyhedron::Points_tag());
+
+		CGAL::convex_decomposition_3(nef);
+		std::list<Polyhedron> convex_parts;
+
+		// the first volume is the outer volume, which is 
+		// ignored in the decomposition
+		Volume_const_iterator ci = ++nef.volumes_begin();
+		for (; ci != nef.volumes_end(); ++ci) {
+			if (ci->mark()) {
+				Polyhedron P;
+				nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
+				convex_parts.push_back(P);
+			}
+		}
+		std::cout << "decomposition into " << convex_parts.size() << " convex parts " << std::endl;
+		
+		printf("END CONVEXIFY\n");
+		delete[] points;
 		return true;
 	}
 
+
+	printf("ERROR CONVEXIFY\n");
 	return false;
 }
 
@@ -107,23 +140,17 @@ PyMODINIT_FUNC PyInit_convexify()
 
 int main(int argc, const char** argv)
 {
-	Nef_polyhedron_3 N = {};
-	// std::cin >> N;
-
-	CGAL::convex_decomposition_3(N);
-	std::list<Polyhedron_3> convex_parts;
-
-	// the first volume is the outer volume, which is 
-	// ignored in the decomposition
-	Volume_const_iterator ci = ++N.volumes_begin();
-	for (; ci != N.volumes_end(); ++ci) {
-		if (ci->mark()) {
-			Polyhedron_3 P;
-			N.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
-			convex_parts.push_back(P);
-		}
-	}
-	std::cout << "decomposition into " << convex_parts.size() << " convex parts " << std::endl;
+	Point points[8] = {
+		{ 1.0f, 1.0f, -1.0f },
+		{ 1.0f, -1.0f, -1.0f },
+		{ -1.0f, -1.0f, -1.0f },
+		{ -1.0f, 1.0f, -1.0f },
+		{ 1.0f, 1.0f, 1.0f },
+		{ 1.0f, -1.0f, 1.0f },
+		{ -1.0f, -1.0f, 1.0f },
+		{ -1.0f, 1.0f, 1.0f }
+	};
+	convexifyMesh(points, 8);
 
 	// setup some default arguments, since cmake does not support them.
 #ifdef _DEBUG

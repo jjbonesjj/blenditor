@@ -28,11 +28,13 @@ bl_info = {
 import bpy;
 import sys;
 import os;
+import time;
 dirPath = os.path.dirname(os.path.realpath(__file__))
 print(dirPath)
 sys.path.append(dirPath + "\\intern\\");
 sys.path.append(dirPath);
 from ctypes import *;
+
 # need to both import AND use ctypes.CDLL? dafuq?
 import convexify;
 convexify = CDLL("convexify.pyd");
@@ -104,28 +106,4 @@ def unregister():
 if __name__ == "__main__":
     register()
 if __name__ == "__main__" and bpy.app.background:
-    print("1")
-    print("2")
-    print("3")
-    val = convexify.paramless();
-    print("4")
-    print(val)
-    print("piped is: ")
-    print(convexify.piper(3))
-
-    SillyArray = c_int * 5;
-    passArray = convexify.passArray;
-    passArray.restype = c_char_p;
-    array = SillyArray(0x41424344, 0x45464748, 0x45464748, 0x49505152, 0x53545556);
-    string = passArray(byref(array), len(array));
-    print("string is :")
-    print(string)
-
-    Points = Point * 3;
-    points = Points((1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (1.0, 2.0, 3.0))
-    sumPointArray = convexify.sumPointArray;
-    sumPointArray.restype = Point;
-    theSum = sumPointArray(byref(points), len(points));
-    print("point sum is: {} {} {}".format(theSum.x, theSum.y, theSum.z))
-
     ExportLevel.execute(None, None)
