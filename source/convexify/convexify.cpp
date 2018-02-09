@@ -28,6 +28,44 @@ static PyObject* helloWorld(PyObject* self, PyObject* args)
 	return PyUnicode_FromString("return: hello convexified world!");
 }
 
+static PyObject* helloArgs(PyObject* self, PyObject* args)
+{
+	PyObject* list = nullptr;
+	if (PyArg_ParseTuple(args, "O", &list))
+	{
+		if (!PySequence_Check(list)) {
+			PyErr_SetString(PyExc_TypeError, "expected sequence");
+			return NULL;
+		}
+
+		int listSize = PyObject_Length(list);
+
+		int* intArray = (int *)malloc(sizeof(int)*listSize);
+		for (int index = 0; index < listSize; index++)
+		{
+			/* get the element from the list/tuple */
+			PyObject* item = PySequence_GetItem(list, index);
+			/* we should check that item != NULL here */
+			/* make sure that it is a Python integer */
+			if (!PyLong_Check(item)) 
+			{
+				free(intArray);  /* free up the memory before leaving */
+				PyErr_SetString(PyExc_TypeError, "expected sequence of integers");
+				return NULL;
+			}
+			/* assign to the C array */
+			intArray[index] = PyLong_AsLong(item);
+		}
+
+		printf("arg success: printf: hello arg'ed world!");
+		return PyUnicode_FromString("arg success: return: hello arg'd world!");
+	}
+
+	printf("argfail: printf: hello arg'ed world!");
+	return PyUnicode_FromString("argfail: return: hello arg'd world!");
+	
+}
+
 EXPORT bool convexifyMesh(Point* vertexPoints, int vertexPointsSize)
 {
 	printf("STARTING CONVEXIFY\n");
@@ -116,10 +154,10 @@ static PyMethodDef convexifyMethods[] = {
 		"helloWorld", helloWorld, METH_NOARGS,
 		"prints out \"Hello Convexified World\""
 	},
-	/*{
-		"convexifyMesh", convexifyMesh, METH_VARARGS,
+	{
+		"helloArgs", helloArgs, METH_VARARGS,
 		"attempts to conexify a mesh"
-	},*/
+	},
 	{ NULL, NULL, 0, NULL }
 };
 

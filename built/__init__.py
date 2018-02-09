@@ -13,5 +13,7 @@ import convexify;
 def test():
     print("starting test.py")
     convexify.helloWorld();
-    
     print("completed test.py")
+    print("starting test2.py")
+    convexify.helloArgs([1, 5, 3, 4, 7]);
+    print("completed test2.py")
