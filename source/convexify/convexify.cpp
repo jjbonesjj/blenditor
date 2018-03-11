@@ -12,6 +12,10 @@
 #include <CGAL/Nef_polyhedron_3.h>
 #include <list>
 
+#include <CGAL/Polyhedron_incremental_builder_3.h>
+#include <CGAL/Polyhedron_3.h>
+
+
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
 
 typedef CGAL::Nef_polyhedron_3<Kernel, CGAL::SNC_indexed_items> Nef_polyhedron;
@@ -66,8 +70,94 @@ static PyObject* helloArgs(PyObject* self, PyObject* args)
 	
 }
 
+struct Vertex
+{
+	float x, y, z;
+};
+
+struct Face
+{
+	int indices[3];
+};
+
+template <class HDS>
+class Build_Polyhedron : public CGAL::Modifier_base<HDS> {
+public:
+
+	Vertex * vertices;
+	int numVertices;
+	Face* faces;
+	int numFaces;
+
+	Build_Polyhedron(Vertex* vertices, int numVertices, Face* faces, int numFaces)
+	{
+		this->vertices = vertices;
+		this->numVertices = numVertices;
+		this->faces = faces;
+		this->numFaces = numFaces;
+	}
+	void operator()(HDS& hds) {
+		// Postcondition: hds is a valid polyhedral surface.
+		CGAL::Polyhedron_incremental_builder_3<HDS> B(hds, true);
+		typedef typename HDS::Vertex   Vertex;
+		typedef typename Vertex::Point Point;
+
+		B.begin_surface(this->numVertices, 0, this->numFaces);
+
+		for (int i = 0; i < numVertices; i++)
+		{
+			B.add_vertex(Point(vertices[i].x, vertices[i].y, vertices[i].z));
+		}
+
+		for (int i = 0; i < numFaces; i++)
+		{
+			B.begin_facet();
+			B.add_vertex_to_facet(this->faces[i].indices[0]);
+			B.add_vertex_to_facet(this->faces[i].indices[1]);
+			B.add_vertex_to_facet(this->faces[i].indices[2]);
+			B.end_facet();
+		}
+
+		B.end_surface();
+	}
+};
+
+Nef_polyhedron make_nef(Vertex* vertices, int numVertices, Face* faces, int numFaces)
+{
+	typedef CGAL::Simple_cartesian<double>     Kernel;
+	typedef CGAL::Polyhedron_3<Kernel>         Polyhedron;
+	typedef Polyhedron::HalfedgeDS             HalfedgeDS;
+	
+	Polyhedron poly;
+	Build_Polyhedron<HalfedgeDS> build_poly(vertices, numVertices, faces, numFaces);
+	poly.delegate(build_poly);
+	CGAL_assertion(poly.is_closed());
+
+	return Nef_polyhedron();
+	
+}
+
 EXPORT bool convexifyMesh(Point* vertexPoints, int vertexPointsSize)
 {
+
+	Vertex verts[4] = 
+	{
+		{ 1.0f, 0.0f, 0.0f },
+		{ 0.0f, 1.0f, 0.0f },
+		{ 0.0f, 0.0f, 1.0f },
+		{ 0.0f, 0.0f, 0.0f }
+	};
+
+	Face faces[4] = 
+	{
+		{ 0, 1, 2 },
+		{ 0, 1, 3 },
+		{ 0, 2, 3 },
+		{ 1, 2, 3 },
+	};
+
+	make_nef(verts, 4, faces, 4);
+
 	printf("STARTING CONVEXIFY\n");
 	printf("there are %i vertexes\n", vertexPointsSize);
 	
