@@ -25,4 +25,6 @@ if [[ $COMMAND = "editor" ]]; then
     blender --python $MAIN $DATA 
 elif [[ $COMMAND = "back" ]]; then
     blender --background --python $MAIN $DATA
+elif [[ $COMMAND = "stand" ]]; then
+    python $MAIN $DATA
 fi

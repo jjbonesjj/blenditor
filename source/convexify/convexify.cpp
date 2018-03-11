@@ -1,29 +1,9 @@
 #include "py_debug.h"
 
 #include "convexify.h"
+#include "transform.h"
 
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/Nef_polyhedron_3.h>
-#include <CGAL/Nef_3/SNC_indexed_items.h>
-#include <CGAL/convex_decomposition_3.h>
-#include <CGAL/Exact_integer.h>
-#include <CGAL/Homogeneous.h>
-#include <CGAL/Nef_polyhedron_3.h>
 #include <list>
-
-#include <CGAL/Polyhedron_incremental_builder_3.h>
-#include <CGAL/Polyhedron_3.h>
-
-
-typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
-
-typedef CGAL::Nef_polyhedron_3<Kernel, CGAL::SNC_indexed_items> Nef_polyhedron;
-typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
-// typedef CGAL::Nef_polyhedron_3<Kernel> Nef_polyhedron;
-
-typedef Kernel::Point_3 Point_3;
-typedef Nef_polyhedron::Volume_const_iterator Volume_const_iterator;
 
 static PyObject* helloWorld(PyObject* self, PyObject* args)
 {
@@ -66,100 +46,23 @@ static PyObject* helloArgs(PyObject* self, PyObject* args)
 	}
 
 	printf("argfail: printf: hello arg'ed world!");
-	return PyUnicode_FromString("argfail: return: hello arg'd world!");
-	
+	return PyUnicode_FromString("argfail: return: hello arg'd world!");	
 }
 
-struct Vertex
-{
-	float x, y, z;
-};
-
-struct Face
-{
-	int indices[3];
-};
-
-template <class HDS>
-class Build_Polyhedron : public CGAL::Modifier_base<HDS> {
-public:
-
-	Vertex * vertices;
-	int numVertices;
-	Face* faces;
-	int numFaces;
-
-	Build_Polyhedron(Vertex* vertices, int numVertices, Face* faces, int numFaces)
-	{
-		this->vertices = vertices;
-		this->numVertices = numVertices;
-		this->faces = faces;
-		this->numFaces = numFaces;
-	}
-	void operator()(HDS& hds) {
-		// Postcondition: hds is a valid polyhedral surface.
-		CGAL::Polyhedron_incremental_builder_3<HDS> B(hds, true);
-		typedef typename HDS::Vertex   Vertex;
-		typedef typename Vertex::Point Point;
-
-		B.begin_surface(this->numVertices, 0, this->numFaces);
-
-		for (int i = 0; i < numVertices; i++)
-		{
-			B.add_vertex(Point(vertices[i].x, vertices[i].y, vertices[i].z));
-		}
-
-		for (int i = 0; i < numFaces; i++)
-		{
-			B.begin_facet();
-			B.add_vertex_to_facet(this->faces[i].indices[0]);
-			B.add_vertex_to_facet(this->faces[i].indices[1]);
-			B.add_vertex_to_facet(this->faces[i].indices[2]);
-			B.end_facet();
-		}
-
-		B.end_surface();
-	}
-};
-
-Nef_polyhedron make_nef(Vertex* vertices, int numVertices, Face* faces, int numFaces)
-{
-	typedef CGAL::Simple_cartesian<double>     Kernel;
-	typedef CGAL::Polyhedron_3<Kernel>         Polyhedron;
-	typedef Polyhedron::HalfedgeDS             HalfedgeDS;
-	
-	Polyhedron poly;
-	Build_Polyhedron<HalfedgeDS> build_poly(vertices, numVertices, faces, numFaces);
-	poly.delegate(build_poly);
-	CGAL_assertion(poly.is_closed());
-
-	return Nef_polyhedron();
-	
-}
-
-EXPORT bool convexifyMesh(Point* vertexPoints, int vertexPointsSize)
+static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 {
 
-	Vertex verts[4] = 
-	{
-		{ 1.0f, 0.0f, 0.0f },
-		{ 0.0f, 1.0f, 0.0f },
-		{ 0.0f, 0.0f, 1.0f },
-		{ 0.0f, 0.0f, 0.0f }
-	};
-
-	Face faces[4] = 
-	{
-		{ 0, 1, 2 },
-		{ 0, 1, 3 },
-		{ 0, 2, 3 },
-		{ 1, 2, 3 },
-	};
-
-	make_nef(verts, 4, faces, 4);
 
 	printf("STARTING CONVEXIFY\n");
-	printf("there are %i vertexes\n", vertexPointsSize);
+	
+	BlenderData data = extractData(args);
+
+
+
+
+	//make_nef(nullptr, 0, nullptr, 0);
+
+	/*printf("there are %i vertexes\n", vertexPointsSize);
 	
 	if (vertexPoints)
 	{
@@ -174,13 +77,14 @@ EXPORT bool convexifyMesh(Point* vertexPoints, int vertexPointsSize)
 		}
 		printf("\n\n");
 
-		Nef_polyhedron nef(points, points + vertexPointsSize, Nef_polyhedron::Points_tag());
+		NefPolyhedron nef(points, points + vertexPointsSize, NefPolyhedron::Points_tag());
 
 		CGAL::convex_decomposition_3(nef);
 		std::list<Polyhedron> convex_parts;
 
 		// the first volume is the outer volume, which is 
 		// ignored in the decomposition
+		typedef NefPolyhedron::Volume_const_iterator Volume_const_iterator;
 		Volume_const_iterator ci = ++nef.volumes_begin();
 		for (; ci != nef.volumes_end(); ++ci) {
 			if (ci->mark()) {
@@ -194,11 +98,21 @@ EXPORT bool convexifyMesh(Point* vertexPoints, int vertexPointsSize)
 		printf("END CONVEXIFY\n");
 		delete[] points;
 		return true;
+	}*/
+
+	if (data.valid)
+	{
+		printf("SUCCESS CONVEXIFY\n");
+		return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
+	}
+	else
+	{
+		printf("ERROR CONVEXIFY\n");
+		return PyUnicode_FromString("argfail: return: hello arg'd world!");
 	}
 
 
-	printf("ERROR CONVEXIFY\n");
-	return false;
+
 }
 
 
@@ -248,6 +162,10 @@ static PyMethodDef convexifyMethods[] = {
 		"helloArgs", helloArgs, METH_VARARGS,
 		"attempts to conexify a mesh"
 	},
+	{
+		"convexifyMesh", convexifyMesh, METH_VARARGS,
+		"attempts to conexify a mesh"
+	},
 	{ NULL, NULL, 0, NULL }
 };
 
@@ -268,18 +186,6 @@ PyMODINIT_FUNC PyInit_convexify()
 
 int main(int argc, const char** argv)
 {
-	Point points[8] = {
-		{ 1.0f, 1.0f, -1.0f },
-		{ 1.0f, -1.0f, -1.0f },
-		{ -1.0f, -1.0f, -1.0f },
-		{ -1.0f, 1.0f, -1.0f },
-		{ 1.0f, 1.0f, 1.0f },
-		{ 1.0f, -1.0f, 1.0f },
-		{ -1.0f, -1.0f, 1.0f },
-		{ -1.0f, 1.0f, 1.0f }
-	};
-	convexifyMesh(points, 8);
-
 	// setup some default arguments, since cmake does not support them.
 #ifdef _DEBUG
 	int numArguments = 4;

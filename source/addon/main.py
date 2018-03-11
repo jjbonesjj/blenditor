@@ -24,20 +24,23 @@ bl_info = {
     "support": "TESTING",
     "category": "Development"
 }
+print("\n\nPYTHON START\n");
 
-import bpy;
-import sys;
 import os;
-import time;
+import sys;
 dirPath = os.path.dirname(os.path.realpath(__file__))
 print(dirPath)
 sys.path.append(dirPath + "\\intern\\");
 sys.path.append(dirPath);
+
+import time;
+import bpy;
+
 from ctypes import *;
 
 # need to both import AND use ctypes.CDLL? dafuq?
 import convexify;
-convexify = CDLL("convexify.pyd");
+#convexify = CDLL("convexify.pyd");
 
 from blenditor import *;
 
@@ -56,19 +59,32 @@ class ExportLevel(bpy.types.Operator):
     filename_ext = ".cyl"
 
     def execute(self, context): # called by blender
-        print("exporting")
-        obj = bpy.context.active_object
-        mesh = obj.data
+        print("exporting\n\n")
 
-        vertexArray = (Point * len(mesh.vertices))()
-        for index, vert in enumerate(mesh.vertices):
-            coord = vert.co
-            point = Point(coord.x, coord.y, coord.z)
-            vertexArray[index] = point;
 
-        convexify.convexifyMesh.restype = c_bool
-        result = convexify.convexifyMesh(byref(vertexArray), len(vertexArray))
-        print("result is ", result)
+        for ob in bpy.data.objects:
+            print (ob.name)
+
+        #obj = bpy.context.active_object
+        #mesh = obj.data
+
+        #vertexArray = (Point * len(mesh.vertices))()
+        #for index, vert in enumerate(mesh.vertices):
+        #    coord = vert.co
+        #    point = Point(coord.x, coord.y, coord.z)
+        #    vertexArray[index] = point;*/
+
+        print(dir(bpy.data.meshes))
+        print(bpy.data.meshes)
+
+        #convexify.convexifyMesh.restype = c_bool
+        result = convexify.convexifyMesh(bpy.data, bpy.context)
+
+
+
+
+
+        #print("result is ", result)
         print("finished calling convexifyMesh")
 
         return {'FINISHED'} # tell blender success
