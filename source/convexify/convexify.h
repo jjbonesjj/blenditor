@@ -40,9 +40,16 @@ struct Polygon
 	int vertices[4];
 };
 
+struct Vector
+{
+	float x, y, z;
+};
+
 struct Vertex
 {
-	double x, y, z;
+	Vector coords;
+	Vector normal;
+	int index;
 };
 
 struct Material

@@ -31,7 +31,7 @@ public:
 
 		for (int i = 0; i < numVertices; i++)
 		{
-			B.add_vertex(Point(vertices[i].x, vertices[i].y, vertices[i].z));
+			B.add_vertex(Point(vertices[i].coords.x, vertices[i].coords.y, vertices[i].coords.z));
 		}
 
 		for (int i = 0; i < numFaces; i++)
@@ -71,22 +71,40 @@ Array<Vertex> extractVertexArray(PyObject* vertexList)
 	result.size = PyObject_Length(vertexList);
 
 	result.data = (Vertex*)malloc(sizeof(Vertex)*result.size);
-	for (int index = 0; index < result.size; index++)
+	for (int i = 0; i < result.size; i++)
 	{
 
-		PyObject* item = PySequence_GetItem(vertexList, index);
+		PyObject* item = PySequence_GetItem(vertexList, i);
 
 		Vertex vertex = {};
 
-		GET_ATTR(item, vertices);
+		GET_ATTR(item, co);
+		GET_ATTR(item, normal);
+		GET_ATTR(item, index);
 
-		//PyArg_ParseTuple(vertices, "fff", &vertex.x, &vertex.y, &vertex.z);
+		// coords
+		PyObject* coordX = PySequence_GetItem(co, 0);
+		vertex.coords.x = PyFloat_AsDouble(coordX);
+		PyObject* coordY = PySequence_GetItem(co, 1);
+		vertex.coords.y = PyFloat_AsDouble(coordX);
+		PyObject* coordZ = PySequence_GetItem(co, 2);
+		vertex.coords.z = PyFloat_AsDouble(coordX);
+
+		// normals
+		PyObject* normalX = PySequence_GetItem(normal, 0);
+		vertex.normal.x = PyFloat_AsDouble(coordX);
+		PyObject* normalY = PySequence_GetItem(normal, 1);
+		vertex.normal.y = PyFloat_AsDouble(coordX);
+		PyObject* normalZ = PySequence_GetItem(normal, 2);
+		vertex.normal.z = PyFloat_AsDouble(coordX);
+
+		vertex.normal.z = PyLong_AsLong(index);
 
 
 		//PyArg_ParseTuple(vertices, "O", &);
-		result.data[index] = vertex;
+		result.data[i] = vertex;
 
-		printf("vertex: %f %f %f\n", vertex.x, vertex.y, vertex.z);
+		printf("vertex: %f %f %f\n", vertex.coords.x, vertex.coords.y, vertex.coords.z);
 
 	}
 	return result;
@@ -105,14 +123,11 @@ Array<Polygon> extractPolygonArray(PyObject* facesList)
 		Polygon polygon = {};
 		GET_ATTR(item, vertices);
 
-		// PRINT_PY(vertices);
-
 		polygon.numVertices = PyObject_Length(vertices);
 
 		for (int j = 0; j < polygon.numVertices; j++)
 		{
 			PyObject* vertexIndex = PySequence_GetItem(vertices, j);
-			PRINT_PY(vertexIndex);
 			polygon.vertices[j] = PyLong_AsLong(vertexIndex);
 		}
 
@@ -142,7 +157,7 @@ Array<Mesh> extractMeshArray(PyObject* meshList)
 	
 		printf("extract mesh array %i\n", index);
 		mesh.polygons = extractPolygonArray(polygons);
-		//mesh.vertices = extractVertexArray(vertices);
+		mesh.vertices = extractVertexArray(vertices);
 		printf("extract mesh array2 %i\n", index);
 		result.data[index] = mesh;
 	}
