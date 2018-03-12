@@ -57,10 +57,7 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 	
 	BlenderData data = extractData(args);
 
-
-
-
-	//make_nef(nullptr, 0, nullptr, 0);
+	make_nef(data.meshes[0].vertices, data.meshes[0].polygons);
 
 	/*printf("there are %i vertexes\n", vertexPointsSize);
 	

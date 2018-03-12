@@ -9,17 +9,13 @@ template <class HDS>
 class Build_Polyhedron : public CGAL::Modifier_base<HDS> {
 public:
 
-	Vertex * vertices;
-	int numVertices;
-	Polygon* polygons;
-	int numFaces;
+	Array<Vertex> vertices;
+	Array<Polygon> faces;
 
-	Build_Polyhedron(Vertex* vertices, int numVertices, Polygon* polygons, int numFaces)
+	Build_Polyhedron(Array<Vertex> vertices, Array<Polygon> faces)
 	{
 		this->vertices = vertices;
-		this->numVertices = numVertices;
-		this->polygons = polygons;
-		this->numFaces = numFaces;
+		this->faces = faces;
 	}
 	void operator()(HDS& hds) {
 		// Postcondition: hds is a valid polyhedral surface.
@@ -27,19 +23,20 @@ public:
 		typedef typename HDS::Vertex   Vertex;
 		typedef typename Vertex::Point Point;
 
-		B.begin_surface(this->numVertices, 0, this->numFaces);
+		B.begin_surface(this->vertices.size, 0, this->faces.size);
 
-		for (int i = 0; i < numVertices; i++)
+		for (int i = 0; i < this->vertices.size; i++)
 		{
 			B.add_vertex(Point(vertices[i].coords.x, vertices[i].coords.y, vertices[i].coords.z));
 		}
 
-		for (int i = 0; i < numFaces; i++)
+		for (int i = 0; i < this->faces.size; i++)
 		{
 			B.begin_facet();
-			B.add_vertex_to_facet(this->polygons[i].vertices[0]);
-			B.add_vertex_to_facet(this->polygons[i].vertices[1]);
-			B.add_vertex_to_facet(this->polygons[i].vertices[2]);
+			B.add_vertex_to_facet(this->faces[i].vertices[0]);
+			B.add_vertex_to_facet(this->faces[i].vertices[1]);
+			B.add_vertex_to_facet(this->faces[i].vertices[2]);
+			B.add_vertex_to_facet(this->faces[i].vertices[3]);
 			B.end_facet();
 		}
 
@@ -47,11 +44,11 @@ public:
 	}
 };
 
-NefPolyhedron make_nef(Vertex* vertices, int numVertices, Polygon* faces, int numFaces)
+NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> faces)
 {
 
 	Polyhedron poly;
-	Build_Polyhedron<Halfedge> buildPoly(vertices, numVertices, faces, numFaces);
+	Build_Polyhedron<Halfedge> buildPoly(vertices, faces);
 	poly.delegate(buildPoly);
 	CGAL_assertion(poly.is_closed());
 
@@ -98,14 +95,10 @@ Array<Vertex> extractVertexArray(PyObject* vertexList)
 		PyObject* normalZ = PySequence_GetItem(normal, 2);
 		vertex.normal.z = PyFloat_AsDouble(coordX);
 
+		//index
 		vertex.index = PyLong_AsLong(index);
 
-
-		//PyArg_ParseTuple(vertices, "O", &);
 		result.data[i] = vertex;
-
-		printf("vertex: %f %f %f\n", vertex.coords.x, vertex.coords.y, vertex.coords.z);
-
 	}
 	return result;
 }
@@ -132,7 +125,6 @@ Array<Polygon> extractPolygonArray(PyObject* facesList)
 		}
 
 		result.data[index] = polygon;
-
 	}
 	return result;
 }

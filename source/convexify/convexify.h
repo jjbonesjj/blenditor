@@ -32,6 +32,11 @@ struct Array
 {
 	int size;
 	T* data;
+
+	T operator[](size_t index)
+	{
+		return this->data[index];
+	}
 };
 
 struct Polygon
