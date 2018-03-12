@@ -19,12 +19,9 @@ typedef CGAL::Polyhedron_3<Kernel>			Polyhedron;
 typedef Polyhedron::HalfedgeDS				Halfedge;
 typedef NefPolyhedron::Halfedge				NefHalfedge;
 
-// MUST MATCH PYTHON
 struct Point
 {
-	float x;
-	float y;
-	float z;
+	double x, y, z;
 };
 
 template <class T>
@@ -47,7 +44,7 @@ struct Polygon
 
 struct Vector
 {
-	float x, y, z;
+	double x, y, z;
 };
 
 struct Vertex

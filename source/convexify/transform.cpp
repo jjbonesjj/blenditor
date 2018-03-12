@@ -23,7 +23,7 @@ public:
 		typedef typename HDS::Vertex   Vertex;
 		typedef typename Vertex::Point Point;
 
-		B.begin_surface(this->vertices.size, 0, this->faces.size);
+		B.begin_surface(this->vertices.size, this->vertices.size, this->faces.size);
 
 		for (int i = 0; i < this->vertices.size; i++)
 		{
@@ -50,9 +50,9 @@ NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> faces)
 	Polyhedron poly;
 	Build_Polyhedron<Halfedge> buildPoly(vertices, faces);
 	poly.delegate(buildPoly);
-	CGAL_assertion(poly.is_closed());
+	//CGAL_assertion(poly.is_closed());
 
-	return NefPolyhedron();
+	return NefPolyhedron(poly);
 }
 
 

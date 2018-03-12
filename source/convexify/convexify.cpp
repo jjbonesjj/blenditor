@@ -57,58 +57,59 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 	
 	BlenderData data = extractData(args);
 
-	make_nef(data.meshes[0].vertices, data.meshes[0].polygons);
-
-	/*printf("there are %i vertexes\n", vertexPointsSize);
-	
-	if (vertexPoints)
-	{
-		Point_3* points = new Point_3[vertexPointsSize];
-		for (int i = 0; i < vertexPointsSize; i++)
-		{
-			points[i] = Point_3(vertexPoints[i].x,
-								vertexPoints[i].y,
-								vertexPoints[i].z);
-			printf("{ %f, %f, %f }", vertexPoints[i].x, vertexPoints[i].y, vertexPoints[i].z);
-			//printf("{ %f, %f, %f }\n", points[i].x, points[i].y, points[i].z);
-		}
-		printf("\n\n");
-
-		NefPolyhedron nef(points, points + vertexPointsSize, NefPolyhedron::Points_tag());
-
-		CGAL::convex_decomposition_3(nef);
-		std::list<Polyhedron> convex_parts;
-
-		// the first volume is the outer volume, which is 
-		// ignored in the decomposition
-		typedef NefPolyhedron::Volume_const_iterator Volume_const_iterator;
-		Volume_const_iterator ci = ++nef.volumes_begin();
-		for (; ci != nef.volumes_end(); ++ci) {
-			if (ci->mark()) {
-				Polyhedron P;
-				nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
-				convex_parts.push_back(P);
-			}
-		}
-		std::cout << "decomposition into " << convex_parts.size() << " convex parts " << std::endl;
-		
-		printf("END CONVEXIFY\n");
-		delete[] points;
-		return true;
-	}*/
-
 	if (data.valid)
 	{
-		printf("SUCCESS CONVEXIFY\n");
-		return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
+		printf("SUCCESS DATA\n");
 	}
 	else
 	{
-		printf("ERROR CONVEXIFY\n");
-		return PyUnicode_FromString("argfail: return: hello arg'd world!");
+		printf("ERROR DATA\n");
 	}
 
+	printf("data is %p\n", data.meshes.data);
 
+	for (int i = 0; i < data.meshes[0].polygons.size; i++)
+	{
+#define lazy(num) data.meshes[0].polygons[i].vertices[num]
+		printf("polygon: %i %i %i %i\n", lazy(0), lazy(1), lazy(2), lazy(3));
+	}
+
+	for (int i = 0; i < data.meshes[0].vertices.size; i++)
+	{
+#define lazy2 data.meshes[0].vertices[i].coords
+		printf("vertex: %f %f %f\n", lazy2.x, lazy2.y, lazy2.z);
+	}
+
+	NefPolyhedron nef = make_nef(data.meshes[0].vertices, data.meshes[0].polygons);
+
+	//CGAL::convex_decomposition_3(nef);
+	std::list<Polyhedron> convex_parts;
+
+	// the first volume is the outer volume, which is 
+	// ignored in the decomposition
+	/*typedef NefPolyhedron::Volume_const_iterator Volume_const_iterator;
+	Volume_const_iterator ci = ++nef.volumes_begin();
+	for (; ci != nef.volumes_end(); ++ci) {
+		if (ci->mark()) {
+			Polyhedron P;
+			nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
+			convex_parts.push_back(P);
+		}
+	}
+	std::cout << "decomposition into " << convex_parts.size() << " convex parts " << std::endl;
+		*/
+	printf("END CONVEXIFY\n");
+
+	//if (nef.is_convex())
+	{
+		printf("SUCCESS CONVEXIFY\n");
+	}
+	//else
+	{
+		printf("ERROR CONVEXIFY\n");
+	}
+
+	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
 
 }
 
