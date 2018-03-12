@@ -22,7 +22,7 @@ static PyObject* helloArgs(PyObject* self, PyObject* args)
 			return NULL;
 		}
 
-		int listSize = PyObject_Length(list);
+		size_t listSize = PyObject_Length(list);
 
 		int* intArray = (int *)malloc(sizeof(int)*listSize);
 		for (int index = 0; index < listSize; index++)

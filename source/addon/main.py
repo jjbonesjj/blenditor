@@ -74,8 +74,8 @@ class ExportLevel(bpy.types.Operator):
         #    point = Point(coord.x, coord.y, coord.z)
         #    vertexArray[index] = point;*/
 
-        print(dir(bpy.data.meshes))
-        print(bpy.data.meshes)
+        print(dir(bpy.data.meshes['Cube'].polygons[0].vertices))
+        print(bpy.data.meshes['Cube'].polygons[0].vertices[1])
 
         #convexify.convexifyMesh.restype = c_bool
         result = convexify.convexifyMesh(bpy.data, bpy.context)

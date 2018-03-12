@@ -1,7 +1,7 @@
 #pragma once
 #include "convexify.h"
 
-NefPolyhedron make_nef(Vertex* vertices, int numVertices, Face* faces, int numFaces);
+NefPolyhedron make_nef(Vertex* vertices, int numVertices, Polygon* polygons, int numFaces);
 
 
 struct BlenderData

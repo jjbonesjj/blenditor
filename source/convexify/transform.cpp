@@ -11,14 +11,14 @@ public:
 
 	Vertex * vertices;
 	int numVertices;
-	Face* faces;
+	Polygon* polygons;
 	int numFaces;
 
-	Build_Polyhedron(Vertex* vertices, int numVertices, Face* faces, int numFaces)
+	Build_Polyhedron(Vertex* vertices, int numVertices, Polygon* polygons, int numFaces)
 	{
 		this->vertices = vertices;
 		this->numVertices = numVertices;
-		this->faces = faces;
+		this->polygons = polygons;
 		this->numFaces = numFaces;
 	}
 	void operator()(HDS& hds) {
@@ -37,9 +37,9 @@ public:
 		for (int i = 0; i < numFaces; i++)
 		{
 			B.begin_facet();
-			B.add_vertex_to_facet(this->faces[i].indices[0]);
-			B.add_vertex_to_facet(this->faces[i].indices[1]);
-			B.add_vertex_to_facet(this->faces[i].indices[2]);
+			B.add_vertex_to_facet(this->polygons[i].vertices[0]);
+			B.add_vertex_to_facet(this->polygons[i].vertices[1]);
+			B.add_vertex_to_facet(this->polygons[i].vertices[2]);
 			B.end_facet();
 		}
 
@@ -47,7 +47,7 @@ public:
 	}
 };
 
-NefPolyhedron make_nef(Vertex* vertices, int numVertices, Face* faces, int numFaces)
+NefPolyhedron make_nef(Vertex* vertices, int numVertices, Polygon* faces, int numFaces)
 {
 
 	Polyhedron poly;
@@ -61,28 +61,90 @@ NefPolyhedron make_nef(Vertex* vertices, int numVertices, Face* faces, int numFa
 
 #include "Python.h"
 
-Array<Mesh> extractMeshArray(PyObject* vertexList)
+#define GET_ATTR(object, name) PyObject* name = nullptr; if(PyObject_HasAttrString(object, #name)) { name = PyObject_GetAttrString(object, #name); } else { printf("failed to extract "#name"\n"); exit(0); }
+#define PRINT_PY(object) { PyObject* objectPath = PyObject_Repr(object); const char* s = PyUnicode_AsUTF8(objectPath); const char* type = object->ob_type->tp_name; printf("%s : %s\n", type,  s); }
+
+
+Array<Vertex> extractVertexArray(PyObject* vertexList)
+{
+	Array<Vertex> result = {};
+	result.size = PyObject_Length(vertexList);
+
+	result.data = (Vertex*)malloc(sizeof(Vertex)*result.size);
+	for (int index = 0; index < result.size; index++)
+	{
+
+		PyObject* item = PySequence_GetItem(vertexList, index);
+
+		Vertex vertex = {};
+
+		GET_ATTR(item, vertices);
+
+		//PyArg_ParseTuple(vertices, "fff", &vertex.x, &vertex.y, &vertex.z);
+
+
+		//PyArg_ParseTuple(vertices, "O", &);
+		result.data[index] = vertex;
+
+		printf("vertex: %f %f %f\n", vertex.x, vertex.y, vertex.z);
+
+	}
+	return result;
+}
+
+Array<Polygon> extractPolygonArray(PyObject* facesList)
+{
+	Array<Polygon> result = {};
+	result.size = PyObject_Length(facesList);
+
+	result.data = (Polygon*)malloc(sizeof(Vertex)*result.size);
+	for (int index = 0; index < result.size; index++)
+	{
+		PyObject* item = PySequence_GetItem(facesList, index);
+
+		Polygon polygon = {};
+		GET_ATTR(item, vertices);
+
+		// PRINT_PY(vertices);
+
+		polygon.numVertices = PyObject_Length(vertices);
+
+		for (int j = 0; j < polygon.numVertices; j++)
+		{
+			PyObject* vertexIndex = PySequence_GetItem(vertices, j);
+			PRINT_PY(vertexIndex);
+			polygon.vertices[j] = PyLong_AsLong(vertexIndex);
+		}
+
+		result.data[index] = polygon;
+
+	}
+	return result;
+}
+
+
+
+Array<Mesh> extractMeshArray(PyObject* meshList)
 {
 	Array<Mesh> result = {};
-	result.size = PyObject_Length(vertexList);
+	result.size = PyObject_Length(meshList);
 
 	result.data = (Mesh *)malloc(sizeof(Vertex)*result.size);
 	for (int index = 0; index < result.size; index++)
 	{
 			
-		PyObject* item = PySequence_GetItem(vertexList, index);
+		PyObject* item = PySequence_GetItem(meshList, index);
 
 		Mesh mesh = {};
-		/*vert.x = PyObject_GetAttrString(item, )
-			
-		if (!PyLong_Check(item))
-		{
-			free(result.data);
-			PyErr_SetString(PyExc_TypeError, "expected sequence of integers");
-			// return NULL;
-		}*/
-		/* assign to the C array */
-		//result.data[index] = PyLong_AsLong(item);
+
+		GET_ATTR(item, polygons);
+		GET_ATTR(item, vertices);
+	
+		printf("extract mesh array %i\n", index);
+		mesh.polygons = extractPolygonArray(polygons);
+		//mesh.vertices = extractVertexArray(vertices);
+		printf("extract mesh array2 %i\n", index);
+		result.data[index] = mesh;
 	}
 	return result;
 }
@@ -100,26 +162,13 @@ BlenderData extractData(PyObject* args)
 	{
 		printf("successfully resolved args\n");
 		internal.valid = true;
-		if (PyObject_HasAttrString(blenderData, "meshes"))
-		{
-			printf("data has meshes\n");
 
-			PyObject* meshes = PyObject_GetAttrString(blenderData, "meshes");
-			if (PyObject_Length(meshes) > 0)
-			{
-				printf("meshes is a sequence");
-			}
-			
-		}
+		GET_ATTR(blenderData, meshes);
 
-		if (PyObject_HasAttrString(blenderData, "objects"))
-		{
-			printf("data has objects\n");
-		}
+		internal.meshes = extractMeshArray(meshes);
 	}
 
 	printf("argfail: printf: hello arg'ed world!\n");
-	//return PyUnicode_FromString("argfail: return: hello arg'd world!");
 
 	return internal;
 

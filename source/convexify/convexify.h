@@ -34,9 +34,10 @@ struct Array
 	T* data;
 };
 
-struct Face
+struct Polygon
 {
-	int indices[3];
+	int numVertices;
+	int vertices[4];
 };
 
 struct Vertex
@@ -51,7 +52,7 @@ struct Material
 
 struct Mesh
 {
-	Array<Face> faces;
+	Array<Polygon> polygons;
 	Array<Vertex> vertices;
 };
 
