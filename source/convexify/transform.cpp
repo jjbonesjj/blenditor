@@ -98,7 +98,7 @@ Array<Vertex> extractVertexArray(PyObject* vertexList)
 		PyObject* normalZ = PySequence_GetItem(normal, 2);
 		vertex.normal.z = PyFloat_AsDouble(coordX);
 
-		vertex.normal.z = PyLong_AsLong(index);
+		vertex.index = PyLong_AsLong(index);
 
 
 		//PyArg_ParseTuple(vertices, "O", &);
