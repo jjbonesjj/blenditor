@@ -65,7 +65,14 @@ C_NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> faces)
 		Assert(CGAL::Polygon_mesh_processing::triangulate_faces(mesh));
 	}
 
-	return C_NefPolyhedron(mesh);
+	Assert(is_valid(mesh, VERBOSE_LOGGING));
+	Assert(is_closed(mesh));
+
+	auto nef = C_NefPolyhedron(mesh);
+
+	Assert(nef.is_valid(VERBOSE_LOGGING));
+
+	return nef;
 }
 
 
