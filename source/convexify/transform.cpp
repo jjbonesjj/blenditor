@@ -1,58 +1,71 @@
 #include "transform.h"
 #include "convexify.h"
 
-#include <CGAL/Polyhedron_incremental_builder_3.h>
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Nef_polyhedron_3.h>
+#include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
+#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
+#include <CGAL/Polygon_mesh_processing/orientation.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
+#include "globals.h"
 
-template <class HDS>
-class Build_Polyhedron : public CGAL::Modifier_base<HDS> {
-public:
-
-	Array<Vertex> vertices;
-	Array<Polygon> faces;
-
-	Build_Polyhedron(Array<Vertex> vertices, Array<Polygon> faces)
-	{
-		this->vertices = vertices;
-		this->faces = faces;
-	}
-	void operator()(HDS& hds) {
-		// Postcondition: hds is a valid polyhedral surface.
-		CGAL::Polyhedron_incremental_builder_3<HDS> B(hds, true);
-		typedef typename HDS::Vertex   Vertex;
-		typedef typename Vertex::Point Point;
-
-		B.begin_surface(this->vertices.size, this->vertices.size, this->faces.size);
-
-		for (int i = 0; i < this->vertices.size; i++)
-		{
-			B.add_vertex(Point(vertices[i].coords.x, vertices[i].coords.y, vertices[i].coords.z));
-		}
-
-		for (int i = 0; i < this->faces.size; i++)
-		{
-			B.begin_facet();
-			B.add_vertex_to_facet(this->faces[i].vertices[0]);
-			B.add_vertex_to_facet(this->faces[i].vertices[1]);
-			B.add_vertex_to_facet(this->faces[i].vertices[2]);
-			B.add_vertex_to_facet(this->faces[i].vertices[3]);
-			B.end_facet();
-		}
-
-		B.end_surface();
-	}
-};
-
-NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> faces)
+#include <vector>
+#include <CGAL/IO/OFF_reader.h>
+C_NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> faces)
 {
 
-	Polyhedron poly;
-	Build_Polyhedron<Halfedge> buildPoly(vertices, faces);
-	poly.delegate(buildPoly);
-	//CGAL_assertion(poly.is_closed());
+	std::vector<C_Point> points;
+	std::vector<std::vector<size_t>> polygons;
 
-	return NefPolyhedron(poly);
+	points.resize(vertices.size);
+	polygons.resize(faces.size);
+
+	printf("hello1\n");
+	for (int i = 0; i < vertices.size; i++)
+	{
+		points[i] = C_Point(vertices[i].coords.x, vertices[i].coords.y, vertices[i].coords.z);
+	}
+	printf("hello2\n");
+	for (int i = 0; i < faces.size; i++)
+	{
+		polygons[i].resize(faces[i].numVertices);
+		for (int j = 0; j < faces[i].numVertices; j++)
+		{
+			polygons[i][j] = faces[i].vertices[j];
+		}
+	}
+
+	printf("hello3\n");
+	Assert(CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(polygons));
+	bool result = CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);
+
+	if (result)
+	{
+		printf("successfully oriented polygon soup\n");
+	}
+	else
+	{
+		printf("some points were duped when orienting polygon soup\n");
+	}
+
+	C_Polyhedron mesh = {};
+	CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, mesh);
+	Assert(is_valid(mesh, VERBOSE_LOGGING));
+	Assert(is_closed(mesh));
+	
+
+	// ensure that the mesh orientation goes outward
+	if (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh))
+	{
+		CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+	}
+
+	if (TRIANGULATE_MESHES)
+	{
+		Assert(CGAL::Polygon_mesh_processing::triangulate_faces(mesh));
+	}
+
+	return C_NefPolyhedron(mesh);
 }
 
 
@@ -83,17 +96,17 @@ Array<Vertex> extractVertexArray(PyObject* vertexList)
 		PyObject* coordX = PySequence_GetItem(co, 0);
 		vertex.coords.x = PyFloat_AsDouble(coordX);
 		PyObject* coordY = PySequence_GetItem(co, 1);
-		vertex.coords.y = PyFloat_AsDouble(coordX);
+		vertex.coords.y = PyFloat_AsDouble(coordY);
 		PyObject* coordZ = PySequence_GetItem(co, 2);
-		vertex.coords.z = PyFloat_AsDouble(coordX);
+		vertex.coords.z = PyFloat_AsDouble(coordZ);
 
 		// normals
 		PyObject* normalX = PySequence_GetItem(normal, 0);
-		vertex.normal.x = PyFloat_AsDouble(coordX);
+		vertex.normal.x = PyFloat_AsDouble(normalX);
 		PyObject* normalY = PySequence_GetItem(normal, 1);
-		vertex.normal.y = PyFloat_AsDouble(coordX);
+		vertex.normal.y = PyFloat_AsDouble(normalY);
 		PyObject* normalZ = PySequence_GetItem(normal, 2);
-		vertex.normal.z = PyFloat_AsDouble(coordX);
+		vertex.normal.z = PyFloat_AsDouble(normalZ);
 
 		//index
 		vertex.index = PyLong_AsLong(index);

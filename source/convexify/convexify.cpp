@@ -5,54 +5,40 @@
 
 #include <list>
 
-static PyObject* helloWorld(PyObject* self, PyObject* args)
+static PyObject* test(PyObject* self, PyObject* args)
 {
-	printf("printf: hello convexified world!");
+	Polygon polys[6] = 
+	{	// NOTE: HACKY: first column is num indices
+		{ 4, 0, 1, 2, 3 },
+		{ 4, 4, 7, 6, 5 },
+		{ 4, 0, 4, 5, 1 },
+		{ 4, 1, 5, 6, 2 },
+		{ 4, 2, 6, 7, 3 },
+		{ 4, 4, 0, 3, 7 }
+	};
 
-	return PyUnicode_FromString("return: hello convexified world!");
-}
-
-static PyObject* helloArgs(PyObject* self, PyObject* args)
-{
-	PyObject* list = nullptr;
-	if (PyArg_ParseTuple(args, "O", &list))
+	Vertex verts[8] = 
 	{
-		if (!PySequence_Check(list)) {
-			PyErr_SetString(PyExc_TypeError, "expected sequence");
-			return NULL;
-		}
+		{ 1.0f,		1.0f,	-1.0f	},
+		{ 1.0f,		-1.0f,	-1.0f	},
+		{ -1.0f,	-1.0f,	-1.0f	},
+		{ -1.0f,	1.0f,	-1.0f	},
+		{ 1.0f,		1.0f,	1.0f	},
+		{ 1.0f,		-1.0f,	1.0f	},
+		{ -1.0f,	-1.0f,	1.0f	},
+		{ -1.0f,	1.0f,	1.0f	},
+	};
 
-		size_t listSize = PyObject_Length(list);
+	Array<Polygon> faces = { 6, polys };
+	Array<Vertex> vertices = { 8, verts };
 
-		int* intArray = (int *)malloc(sizeof(int)*listSize);
-		for (int index = 0; index < listSize; index++)
-		{
-			/* get the element from the list/tuple */
-			PyObject* item = PySequence_GetItem(list, index);
-			/* we should check that item != NULL here */
-			/* make sure that it is a Python integer */
-			if (!PyLong_Check(item)) 
-			{
-				free(intArray);  /* free up the memory before leaving */
-				PyErr_SetString(PyExc_TypeError, "expected sequence of integers");
-				return NULL;
-			}
-			/* assign to the C array */
-			intArray[index] = PyLong_AsLong(item);
-		}
+	C_NefPolyhedron nef = make_nef(vertices, faces);
 
-		printf("arg success: printf: hello arg'ed world!");
-		return PyUnicode_FromString("arg success: return: hello arg'd world!");
-	}
-
-	printf("argfail: printf: hello arg'ed world!");
-	return PyUnicode_FromString("argfail: return: hello arg'd world!");	
+	return PyUnicode_FromString("done");	
 }
 
 static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 {
-
-
 	printf("STARTING CONVEXIFY\n");
 	
 	BlenderData data = extractData(args);
@@ -80,10 +66,10 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 		printf("vertex: %f %f %f\n", lazy2.x, lazy2.y, lazy2.z);
 	}
 
-	NefPolyhedron nef = make_nef(data.meshes[0].vertices, data.meshes[0].polygons);
+	C_NefPolyhedron nef = make_nef(data.meshes[0].vertices, data.meshes[0].polygons);
 
 	//CGAL::convex_decomposition_3(nef);
-	std::list<Polyhedron> convex_parts;
+	std::list<C_Polyhedron> convex_parts;
 
 	// the first volume is the outer volume, which is 
 	// ignored in the decomposition
@@ -112,8 +98,6 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
 
 }
-
-
 
 EXPORT int paramless()
 {
@@ -153,12 +137,8 @@ EXPORT Point sumPointArray(Point* arr, int size)
 
 static PyMethodDef convexifyMethods[] = {
 	{
-		"helloWorld", helloWorld, METH_NOARGS,
+		"test", test, METH_NOARGS,
 		"prints out \"Hello Convexified World\""
-	},
-	{
-		"helloArgs", helloArgs, METH_VARARGS,
-		"attempts to conexify a mesh"
 	},
 	{
 		"convexifyMesh", convexifyMesh, METH_VARARGS,
