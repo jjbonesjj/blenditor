@@ -27,8 +27,40 @@ class Blenditor(bpy.types.Panel):
 
     def draw(self, context):
         print("drawing");
+        
+        layout = self.layout
+ 
+        layout.label("First row")
         row = self.layout.row();
         row.label(text="hello");
+        self.layout.operator("hello.hello", text='Ciao').country = "Italy"
+
+class OBJECT_OT_HelloButton(bpy.types.Operator):
+    bl_idname = "hello.hello"
+    bl_label = "Say Hello"
+    country = bpy.props.StringProperty()
+ 
+    def execute(self, context):
+        
+        # add visual bounds
+        WIDTH = 1.0
+        HEIGHT = 1.0
+        DEPTH = 3.0
+        bpy.ops.mesh.primitive_cube_add();
+        obj = bpy.context.object
+        bpy.ops.transform.resize(value=(WIDTH, HEIGHT, DEPTH))
+        obj.hide_select = True
+        obj.data.update()
+
+        if self.country == '':
+            print("Hello world!")
+        else:
+            print("Hello world from %s!" % self.country)
+        return{'FINISHED'} 
+
+
+bpy.utils.register_module(__name__)
+
 
 
      
