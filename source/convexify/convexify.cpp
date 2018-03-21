@@ -2,6 +2,7 @@
 
 #include "convexify.h"
 #include "transform.h"
+#include "io.h"
 
 #include <list>
 
@@ -49,6 +50,8 @@ C_NefPolyhedron convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	{
 		printf("ERROR CONVEXIFY\n");
 	}
+
+	buildCyLevel(nef, "level1");
 
 	return nef;
 }
@@ -101,6 +104,8 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 	}
 	
 	C_NefPolyhedron nef = convexify(data.meshes[0].vertices, data.meshes[0].polygons);
+
+
 
 	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
 
