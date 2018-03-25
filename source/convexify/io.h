@@ -16,22 +16,33 @@ static const char* CYL_EXTENSION = ".cyl";
 #define MAKE_VERSION(major, minor, mini) (major << 24) | (major << 16) | (mini << 0) 
 #define OFFSET(base, ptr) (((char*)ptr) + base)
 
+struct Face
+{
+	u32 indices[3];
+	float normal[3];
+};
+
 struct SubMesh
 {
+	u32 numFaces;
+	Face* faces;
+};
+
+struct Mesh
+{
+	u32 numSubMeshes;
+	SubMesh* subMeshes;
+
+	// vertices for all submeshes
+	// submeshes are expected to share many faces
 	u32 numVertices;
 	Vertex* vertices;
 };
 
-struct GroundMesh
-{
-	u32 numSubMeshes;
-	SubMesh* subMeshes;
-};
-
 struct Chunk
 {
-	u32 numGroundMeshes;
-	GroundMesh* meshes;
+	u32 numMeshes;
+	Mesh* meshes;
 };
 
 enum NumberType
@@ -64,4 +75,4 @@ struct CylHeader
 
 };
 
-void buildCyLevel(C_NefPolyhedron nef, char* filePath);
+void buildCyLevel(Array<Chunk> chunks, char* filePath);

@@ -6,7 +6,7 @@
 
 #include <list>
 
-C_NefPolyhedron convexify(Array<Vertex> vertices, Array<Polygon> faces)
+Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 {
 
 	for (int i = 0; i < faces.size; i++)
@@ -51,42 +51,94 @@ C_NefPolyhedron convexify(Array<Vertex> vertices, Array<Polygon> faces)
 		printf("ERROR CONVEXIFY\n");
 	}
 
+
+	// initialize the indices
+	int vertexIndices = 0;
+	int facetsIndices = 0;
+	int edgeIndices = 0;
 	for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
 	{
-		int i = 0;
 		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
 		{
-			jt->id() = i++;
+			jt->id() = vertexIndices++;
 		}
-		i = 0;
+
 		for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
 		{
-			jt->id() = i++;
+			jt->id() = facetsIndices++;
 		}
-		i = 0;
+
 		for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
 		{
-			jt->id() = i++;
+			jt->id() = edgeIndices++;
 		}
+	}
 
+	// build the mesh
+	Mesh mesh = {};
+	mesh.numSubMeshes = convex_parts.size();
+	mesh.subMeshes = (SubMesh*)malloc(sizeof(SubMesh) * mesh.numSubMeshes);
 
-
-		for (C_Polyhedron::Face_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++ ) {
+	mesh.numVertices = vertexIndices;
+	mesh.vertices = (Vertex*)malloc(sizeof(Vertex) * mesh.numVertices);
+	int subMeshCounter = 0;
+	for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
+	{
+		SubMesh subMesh = {};
+		subMesh.numFaces = it->size_of_facets();
+		subMesh.faces = (Face*)malloc(sizeof(Face) * subMesh.numFaces);
+		int facetsCounter = 0;
+		for (C_Polyhedron::Face_iterator jt = it->facets_begin(); 
+			 jt != it->facets_end(); 
+			 jt++, facetsCounter++) 
+		{
 			C_Polyhedron::Halfedge_around_facet_circulator circ = jt->facet_begin();
-			std::cout << "Vertex indices of facet: " << jt->id() << " ";
+
+			int facetCounter = 0;
+			std::cout << "Vertex indices of facet: " << jt->id();
 			do {
 				std::cout << " [" << circ->vertex()->id() << "] ";
 				std::cout << "{ " << circ->vertex()->point().x() << " ";
 				std::cout << circ->vertex()->point().y() << " ";
 				std::cout << circ->vertex()->point().z() << " } ";
-				//std::cout << circ->vertex()->point().
+
+				subMesh.faces[facetsCounter].indices[facetCounter] = circ->vertex()->id();
+				
+				facetCounter++;
 			} while (++circ != jt->facet_begin());
 			std::cout << '\n';
+
+
+			
+			// todo compute normal of face
+
+		}
+
+		mesh.subMeshes[subMeshCounter] = subMesh;
+		subMeshCounter++;
+
+		int meshVertexCounter = 0;
+		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
+		{
+			mesh.vertices[meshVertexCounter].coords.x = jt->point().x().exact().to_double();
+			mesh.vertices[meshVertexCounter].coords.y = jt->point().y().exact().to_double();
+			mesh.vertices[meshVertexCounter].coords.z = jt->point().z().exact().to_double();
+			meshVertexCounter++;
 		}
 	}
 
+	// todo do this properly
+	Chunk chunk = {};
+	chunk.numMeshes = 1;
+	chunk.meshes = &mesh;
+	
+	Array<Chunk> chunks = {};
+	chunks.size = 1;
+	chunks.data = &chunk;
 
-	return nef;
+	buildCyLevel(chunks, "level1");
+
+	return mesh;
 }
 
 static PyObject* test(PyObject* self, PyObject* args)
@@ -116,7 +168,7 @@ static PyObject* test(PyObject* self, PyObject* args)
 	Array<Polygon> faces = { 6, polys };
 	Array<Vertex> vertices = { 8, verts };
 
-	C_NefPolyhedron nef = convexify(vertices, faces);
+	Mesh mesh = convexify(vertices, faces);
 
 	return PyUnicode_FromString("done");	
 }
@@ -136,9 +188,7 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 		printf("ERROR DATA\n");
 	}
 	
-	C_NefPolyhedron nef = convexify(data.meshes[0].vertices, data.meshes[0].polygons);
-
-	buildCyLevel(nef, "level1");
+	Mesh mesh = convexify(data.meshes[0].vertices, data.meshes[0].polygons);
 
 	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
 

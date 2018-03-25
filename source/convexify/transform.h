@@ -8,7 +8,7 @@ struct BlenderData
 {
 	bool valid;
 	Array<Material> materials;
-	Array<Mesh> meshes;
+	Array<BlenderMesh> meshes;
 	Array<Object> objects;
 	Array<Texture> textures;
 };

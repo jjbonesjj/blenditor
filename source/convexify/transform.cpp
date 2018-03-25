@@ -169,18 +169,18 @@ Array<Polygon> extractPolygonArray(PyObject* facesList)
 
 
 
-Array<Mesh> extractMeshArray(PyObject* meshList)
+Array<BlenderMesh> extractMeshArray(PyObject* meshList)
 {
-	Array<Mesh> result = {};
+	Array<BlenderMesh> result = {};
 	result.size = PyObject_Length(meshList);
 
-	result.data = (Mesh *)malloc(sizeof(Vertex)*result.size);
+	result.data = (BlenderMesh *)malloc(sizeof(Vertex)*result.size);
 	for (int index = 0; index < result.size; index++)
 	{
 			
 		PyObject* item = PySequence_GetItem(meshList, index);
 
-		Mesh mesh = {};
+		BlenderMesh mesh = {};
 
 		GET_ATTR(item, polygons);
 		GET_ATTR(item, vertices);

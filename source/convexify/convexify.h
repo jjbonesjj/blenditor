@@ -66,7 +66,7 @@ struct Material
 
 };
 
-struct Mesh
+struct BlenderMesh
 {
 	Array<Polygon> polygons;
 	Array<Vertex> vertices;
