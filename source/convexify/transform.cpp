@@ -52,6 +52,24 @@ C_NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> faces)
 	CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, mesh);
 	Assert(is_valid(mesh, VERBOSE_LOGGING));
 	Assert(is_closed(mesh));
+
+	int i = 0;
+	for (C_Polyhedron::Vertex_iterator it = mesh.vertices_begin(); it != mesh.vertices_end(); it++)
+	{
+		it->id() = i++;
+	}
+	i = 0;
+	for (C_Polyhedron::Facet_iterator it = mesh.facets_begin(); it != mesh.facets_end(); it++)
+	{
+		it->id() = i++;
+	}
+	i = 0;
+	for (C_Polyhedron::Edge_iterator it = mesh.edges_begin(); it != mesh.edges_end(); it++)
+	{
+		it->id() = i++;
+	}
+
+	// edges etc. 
 	
 
 	// ensure that the mesh orientation goes outward

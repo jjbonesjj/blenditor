@@ -51,7 +51,40 @@ C_NefPolyhedron convexify(Array<Vertex> vertices, Array<Polygon> faces)
 		printf("ERROR CONVEXIFY\n");
 	}
 
-	buildCyLevel(nef, "level1");
+	for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
+	{
+		int i = 0;
+		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
+		{
+			jt->id() = i++;
+		}
+		i = 0;
+		for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
+		{
+			jt->id() = i++;
+		}
+		i = 0;
+		for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
+		{
+			jt->id() = i++;
+		}
+
+
+
+		for (C_Polyhedron::Face_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++ ) {
+			C_Polyhedron::Halfedge_around_facet_circulator circ = jt->facet_begin();
+			std::cout << "Vertex indices of facet: " << jt->id() << " ";
+			do {
+				std::cout << " [" << circ->vertex()->id() << "] ";
+				std::cout << "{ " << circ->vertex()->point().x() << " ";
+				std::cout << circ->vertex()->point().y() << " ";
+				std::cout << circ->vertex()->point().z() << " } ";
+				//std::cout << circ->vertex()->point().
+			} while (++circ != jt->facet_begin());
+			std::cout << '\n';
+		}
+	}
+
 
 	return nef;
 }
@@ -105,7 +138,7 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 	
 	C_NefPolyhedron nef = convexify(data.meshes[0].vertices, data.meshes[0].polygons);
 
-
+	buildCyLevel(nef, "level1");
 
 	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
 

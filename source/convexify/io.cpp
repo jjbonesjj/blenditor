@@ -5,21 +5,8 @@
 
 void buildCyLevel(C_NefPolyhedron nef, char* filePath)
 {
-	std::list<C_Polyhedron> convex_parts;
 
-	// the first volume is the outer volume, which is 
-	// ignored in the decomposition
-	typedef C_NefPolyhedron::Volume_const_iterator Volume_const_iterator;
-	Volume_const_iterator ci = ++nef.volumes_begin();
-	for (; ci != nef.volumes_end(); ++ci) {
-		if (ci->mark()) {
-			C_Polyhedron P;
-			nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
-			convex_parts.push_back(P);
-		}
-	}
-	std::cout << "decomposition into " << convex_parts.size() << " convex parts " << std::endl;
-
+	/*
 	std::string path = filePath;
 	path += CYL_EXTENSION;
 
@@ -46,6 +33,6 @@ void buildCyLevel(C_NefPolyhedron nef, char* filePath)
 		file.close();
 	}
 
-
+	*/
 
 }

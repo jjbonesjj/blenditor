@@ -34,10 +34,30 @@ struct Chunk
 	GroundMesh* meshes;
 };
 
+enum NumberType
+{
+	FixedPoint,
+	FloatingPoint
+};
+
 struct CylHeader
 {
 	char magic[MAGIC_LEN];
 	u32 version;
+
+	NumberType numberType;
+	union
+	{
+		struct // fixed point specific
+		{
+			u32 fixedPointNumFractionalBits;
+		};
+		struct // floating point specific
+		{
+
+		};
+	};
+
 
 	u32 numChunks;
 	Chunk* chunks;
