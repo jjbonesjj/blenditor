@@ -12,6 +12,7 @@ struct Stack
 	char* push(int amount)
 	{
 		Assert(size + amount <= capacity);
+
 		char* ptr = buffer + size;
 		size += amount;
 		return ptr;
@@ -22,6 +23,7 @@ Stack initStack(int amount)
 {
 	Stack stack = {};
 	stack.buffer = (char*)malloc(amount);
+	memset(stack.buffer, 0, stack.capacity);
 	stack.size = 0;
 	stack.capacity = amount;
 
@@ -32,6 +34,7 @@ void buildCyLevel(Array<Chunk> chunks, char* filePath)
 {
 
 	int fileSize = 0;
+	fileSize += sizeof(CylHeader);
 	fileSize += chunks.size * sizeof(*chunks.data);
 	for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
 	{
@@ -72,45 +75,55 @@ void buildCyLevel(Array<Chunk> chunks, char* filePath)
 	CylHeader* sourceCylHeader = &source;
 	memcpy(destCylHeader, sourceCylHeader, sizeof(CylHeader));
 
-#if 0
-	for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
-	{
-		PREREPETITIVE(currentChunk, CylHeader, chunks, Chunk);
-		REPETITIVE(currentChunk, CylHeader, chunks, Chunk, meshes, Mesh);
+	destCylHeader->chunks.size = chunks.size;
+	destCylHeader->chunks.data = (Chunk*)buffer.push(sizeof(Chunk) * destCylHeader->chunks.size);
+	memcpy(destCylHeader->chunks.data, sourceCylHeader->chunks.data, sizeof(Chunk) * destCylHeader->chunks.size);
 
-		for (int currentMesh = 0; currentMesh < sourceChunk->meshes.size; currentMesh++)
-		{
-			PREREPETITIVE(currentMesh, Chunk, meshes, Mesh);
-			REPETITIVE(currentMesh, Chunk, meshes, Mesh, subMeshes, SubMesh);
-			REPETITIVE(currentMesh, Chunk, meshes, Mesh, vertices, Vertex);
-		}
-	}
-#else
 	for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
 	{
-		Chunk* sourceChunk = sourceCylHeader->chunks(currentChunk); 
+		Chunk* sourceChunk = sourceCylHeader->chunks(currentChunk);
 		Chunk* destChunk = destCylHeader->chunks(currentChunk);
-		Mesh* bufferMesh = (Mesh*)buffer.push(sizeof(*sourceChunk->meshes.data) * sourceChunk->meshes.size); 
-		destChunk->meshes.data = decltype(bufferMesh)((char*)buffer.buffer - (char*)bufferMesh); 
-		memcpy(bufferMesh, sourceChunk, sizeof(*sourceCylHeader->chunks.data) * sourceCylHeader->chunks.size);;
+		BUILD_MAGIC(destChunk, Chunk);
+		int meshesSizeBytes = sizeof(*sourceChunk->meshes.data) * sourceChunk->meshes.size;
+		Mesh* bufferMesh = (Mesh*)buffer.push(meshesSizeBytes);
+		destChunk->meshes.data = REL_PTR(bufferMesh, buffer.buffer);
+		memcpy(bufferMesh, sourceChunk->meshes.data, meshesSizeBytes);
 
 		for (int currentMesh = 0; currentMesh < sourceChunk->meshes.size; currentMesh++)
 		{
-			Mesh* sourceMesh = sourceChunk->meshes(currentMesh); 
-			Mesh* destMesh = destChunk->meshes(currentMesh);
+			Mesh* sourceMesh = sourceChunk->meshes(currentMesh);
+			Mesh* destMesh = &bufferMesh[currentMesh];
+			BUILD_MAGIC(destMesh, Mesh);
 
-			SubMesh* bufferSubMesh = (SubMesh*)buffer.push(sizeof(*sourceMesh->subMeshes.data) * sourceMesh->subMeshes.size); 
-			destMesh->subMeshes.data = decltype(bufferSubMesh)((char*)buffer.buffer - (char*)bufferSubMesh);
-			memcpy(bufferSubMesh, sourceMesh, sizeof(*sourceChunk->meshes.data) * sourceChunk->meshes.size);
+			int subMeshesSizeBytes = sizeof(*sourceMesh->subMeshes.data) * sourceMesh->subMeshes.size;
+			SubMesh* bufferSubMesh = (SubMesh*)buffer.push(subMeshesSizeBytes);
+			destMesh->subMeshes.data = REL_PTR(bufferSubMesh, buffer.buffer);
+			memcpy(bufferSubMesh, sourceMesh->subMeshes.data, subMeshesSizeBytes);
 
-			Vertex* bufferVertex = (Vertex*)buffer.push(sizeof(*sourceMesh->vertices.data) * sourceMesh->vertices.size); 
-			destMesh->vertices.data = decltype(bufferVertex)((char*)buffer.buffer - (char*)bufferVertex); 
-			memcpy(bufferVertex, sourceMesh, sizeof(*sourceChunk->meshes.data) * sourceChunk->meshes.size);
+			int verticesSizeBytes = sizeof(*sourceMesh->vertices.data) * sourceMesh->vertices.size;
+			Vertex* bufferVertex = (Vertex*)buffer.push(verticesSizeBytes);
+			destMesh->vertices.data = REL_PTR(bufferVertex, buffer.buffer);
+			memcpy(bufferVertex, sourceMesh->vertices.data, verticesSizeBytes);
+
+			for (int currentSubMesh = 0; currentSubMesh < sourceMesh->subMeshes.size; currentSubMesh++)
+			{
+				SubMesh* sourceSubMesh = sourceMesh->subMeshes(currentSubMesh);
+				SubMesh* destSubMesh = &bufferSubMesh[currentSubMesh];
+				BUILD_MAGIC(destSubMesh, SubMesh);
+
+				int facesSizeBytes = sizeof(*sourceSubMesh->faces.data) * sourceSubMesh->faces.size;
+				Face* bufferFaces = (Face*)buffer.push(facesSizeBytes);
+				destMesh->subMeshes.data = REL_PTR(bufferSubMesh, buffer.buffer);
+				memcpy(bufferFaces, sourceSubMesh->faces.data, facesSizeBytes);
+
+				for (int currentFace = 0; currentFace < sourceSubMesh->faces.size; currentFace++)
+				{
+					Face* destFace = &bufferFaces[currentFace];
+					BUILD_MAGIC(destFace, Face);
+				}
+			}
 		}
-
-
 	}
-#endif
 
 
 	std::string path = filePath;

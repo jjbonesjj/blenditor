@@ -114,7 +114,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 
 		}
 
-		mesh.subMeshes[subMeshCounter] = subMesh;
+		*mesh.subMeshes(subMeshCounter) = subMesh;
 		subMeshCounter++;
 
 		int meshVertexCounter = 0;
