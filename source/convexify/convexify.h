@@ -41,6 +41,11 @@ struct Array
 	{
 		return this->data[index];
 	}
+
+	T* operator()(size_t index)
+	{
+		return &this->data[index];
+	}
 };
 
 struct Polygon
@@ -85,4 +90,4 @@ struct Texture
 #define EXPORT extern "C" __declspec(dllexport)
 
 // FOR NOW, this tool will only be used by me, so FOR NOW this is sufficient.
-#define Assert(test, message, ...) if(!test) { *(int*)0 = 0; }
+#define Assert(test, message, ...) if(!(test)) { *(int*)0 = 0; }

@@ -25,25 +25,21 @@ struct Face
 
 struct SubMesh
 {
-	u32 numFaces;
-	Face* faces;
+	Array<Face> faces;
 };
 
 struct Mesh
 {
-	u32 numSubMeshes;
-	SubMesh* subMeshes;
+	Array<SubMesh> subMeshes;
 
 	// vertices for all submeshes
 	// submeshes are expected to share many faces
-	u32 numVertices;
-	Vertex* vertices;
+	Array<Vertex> vertices;
 };
 
 struct Chunk
 {
-	u32 numMeshes;
-	Mesh* meshes;
+	Array<Mesh> meshes;
 };
 
 enum NumberType
@@ -70,9 +66,7 @@ struct CylHeader
 		};
 	};
 
-
-	u32 numChunks;
-	Chunk* chunks;
+	Array<Chunk> chunks;
 
 };
 

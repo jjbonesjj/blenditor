@@ -76,17 +76,17 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 
 	// build the mesh
 	Mesh mesh = {};
-	mesh.numSubMeshes = convex_parts.size();
-	mesh.subMeshes = (SubMesh*)malloc(sizeof(SubMesh) * mesh.numSubMeshes);
+	mesh.subMeshes.size = convex_parts.size();
+	mesh.subMeshes.data = (SubMesh*)malloc(sizeof(SubMesh) * mesh.subMeshes.size);
 
-	mesh.numVertices = vertexIndices;
-	mesh.vertices = (Vertex*)malloc(sizeof(Vertex) * mesh.numVertices);
+	mesh.vertices.size = vertexIndices;
+	mesh.vertices.data = (Vertex*)malloc(sizeof(Vertex) * mesh.vertices.size);
 	int subMeshCounter = 0;
 	for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
 	{
 		SubMesh subMesh = {};
-		subMesh.numFaces = it->size_of_facets();
-		subMesh.faces = (Face*)malloc(sizeof(Face) * subMesh.numFaces);
+		subMesh.faces.size = it->size_of_facets();
+		subMesh.faces.data = (Face*)malloc(sizeof(Face) * subMesh.faces.size);
 		int facetsCounter = 0;
 		for (C_Polyhedron::Face_iterator jt = it->facets_begin(); 
 			 jt != it->facets_end(); 
@@ -120,17 +120,17 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 		int meshVertexCounter = 0;
 		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
 		{
-			mesh.vertices[meshVertexCounter].coords.x = jt->point().x().exact().to_double();
-			mesh.vertices[meshVertexCounter].coords.y = jt->point().y().exact().to_double();
-			mesh.vertices[meshVertexCounter].coords.z = jt->point().z().exact().to_double();
+			mesh.vertices(meshVertexCounter)->coords.x = jt->point().x().exact().to_double();
+			mesh.vertices(meshVertexCounter)->coords.y = jt->point().y().exact().to_double();
+			mesh.vertices(meshVertexCounter)->coords.z = jt->point().z().exact().to_double();
 			meshVertexCounter++;
 		}
 	}
 
 	// todo do this properly
 	Chunk chunk = {};
-	chunk.numMeshes = 1;
-	chunk.meshes = &mesh;
+	chunk.meshes.size = 1;
+	chunk.meshes.data = &mesh;
 	
 	Array<Chunk> chunks = {};
 	chunks.size = 1;

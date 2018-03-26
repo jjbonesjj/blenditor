@@ -7,11 +7,11 @@ struct Stack
 {
 	char* buffer;
 	int size;
-	int used;
+	int capacity;
 
 	char* push(int amount)
 	{
-		Assert(used + amount <= size);
+		Assert(size + amount <= capacity);
 		char* ptr = buffer + size;
 		size += amount;
 		return ptr;
@@ -22,10 +22,11 @@ Stack initStack(int amount)
 {
 	Stack stack = {};
 	stack.buffer = (char*)malloc(amount);
-	stack.used = 0;
-	stack.size = amount;
-}
+	stack.size = 0;
+	stack.capacity = amount;
 
+	return stack;
+}
 
 void buildCyLevel(Array<Chunk> chunks, char* filePath)
 {
@@ -35,57 +36,82 @@ void buildCyLevel(Array<Chunk> chunks, char* filePath)
 	for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
 	{
 		Chunk chunk = chunks.data[currentChunk];
-		fileSize += chunk.numMeshes * sizeof(*chunk.meshes);
-		for (int currentMesh = 0; currentMesh < chunk.numMeshes; currentMesh++)
+		fileSize += chunk.meshes.size * sizeof(*chunk.meshes.data);
+		for (int currentMesh = 0; currentMesh < chunk.meshes.size; currentMesh++)
 		{
 			Mesh mesh = chunk.meshes[currentMesh];
-			fileSize += mesh.numSubMeshes * sizeof(*mesh.subMeshes);
-			fileSize += mesh.numVertices * sizeof(*mesh.vertices);
-			for (int currentSubMesh = 0; currentSubMesh < mesh.numSubMeshes; currentSubMesh++)
+			fileSize += mesh.subMeshes.size * sizeof(*mesh.subMeshes.data);
+			fileSize += mesh.vertices.size * sizeof(*mesh.vertices.data);
+			for (int currentSubMesh = 0; currentSubMesh < mesh.subMeshes.size; currentSubMesh++)
 			{
 				SubMesh subMesh = mesh.subMeshes[currentSubMesh];
-				fileSize += subMesh.numFaces * sizeof(*subMesh.faces);
+				fileSize += subMesh.faces.size * sizeof(*subMesh.faces.data);
 			}
 		}
 	}
 
+#define PREREPETITIVE(index, previousPreviousType, previousPreviousTypeEntry, previousType) \
+	previousType* source##previousType = &source##previousPreviousType->previousPreviousTypeEntry[index]; \
+	previousType* dest##previousType = &dest##previousPreviousType->previousPreviousTypeEntry[index];
+
+#define REPETITIVE(index, previousPreviousType, previousPreviousTypeEntry, previousType, previousTypeEntry, newType) \
+	newType* buffer##newType = (newType*)buffer.push(sizeof(*source##previousType->previousTypeEntry.data) * source##previousType->previousTypeEntry.size); \
+	dest##previousType->previousTypeEntry.data = REL_PTR(buffer.buffer, buffer##newType); \
+	memcpy(buffer##newType, source##previousType, sizeof(*source##previousPreviousType->previousPreviousTypeEntry.data) * source##previousPreviousType->previousPreviousTypeEntry.size);
+
 	Stack buffer = initStack(fileSize);
 
-	CylHeader* header = (CylHeader*)buffer.push(sizeof(CylHeader));
+	CylHeader source = {};
+	strcpy(source.magic, MAGIC);
+	source.version = MAKE_VERSION(0, 0, 1);
+	source.chunks.size = chunks.size;
+	source.chunks.data = chunks.data;
 
-	strcpy(header->magic, MAGIC);
-	header->version = MAKE_VERSION(0, 0, 1);
 
-	Chunk* bufferChunks = (Chunk*)buffer.push(sizeof(Chunk) * chunks.size);
+	CylHeader* destCylHeader = (CylHeader*)buffer.push(sizeof(CylHeader));
+	CylHeader* sourceCylHeader = &source;
+	memcpy(destCylHeader, sourceCylHeader, sizeof(CylHeader));
 
-	header->numChunks = chunks.size;
-	header->chunks = REL_PTR(buffer.buffer, bufferChunks);
-
-	memcpy(bufferChunks, chunks.data, chunks.size * sizeof(*chunks.data));
-
+#if 0
 	for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
 	{
-		Chunk* sourceChunk = &chunks.data[currentChunk];
-		Chunk* destChunk = &bufferChunks[currentChunk];
-		
-		Mesh* bufferMeshes = (Mesh*)buffer.push(sizeof(*sourceChunk->meshes) * sourceChunk->numMeshes);
-		destChunk->meshes = REL_PTR(buffer.buffer, bufferMeshes);
+		PREREPETITIVE(currentChunk, CylHeader, chunks, Chunk);
+		REPETITIVE(currentChunk, CylHeader, chunks, Chunk, meshes, Mesh);
 
-		memcpy(bufferMeshes, sourceChunk->meshes, sizeof(*sourceChunk->meshes) * sourceChunk->numMeshes);
-
-		for (int currentMesh = 0; currentMesh < sourceChunk->numMeshes; currentMesh++)
+		for (int currentMesh = 0; currentMesh < sourceChunk->meshes.size; currentMesh++)
 		{
-			Mesh* sourceMesh = &sourceChunk->meshes[currentMesh];
-			Mesh* destMesh = &destChunk->meshes[currentMesh];
+			PREREPETITIVE(currentMesh, Chunk, meshes, Mesh);
+			REPETITIVE(currentMesh, Chunk, meshes, Mesh, subMeshes, SubMesh);
+			REPETITIVE(currentMesh, Chunk, meshes, Mesh, vertices, Vertex);
+		}
+	}
+#else
+	for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
+	{
+		Chunk* sourceChunk = sourceCylHeader->chunks(currentChunk); 
+		Chunk* destChunk = destCylHeader->chunks(currentChunk);
+		Mesh* bufferMesh = (Mesh*)buffer.push(sizeof(*sourceChunk->meshes.data) * sourceChunk->meshes.size); 
+		destChunk->meshes.data = decltype(bufferMesh)((char*)buffer.buffer - (char*)bufferMesh); 
+		memcpy(bufferMesh, sourceChunk, sizeof(*sourceCylHeader->chunks.data) * sourceCylHeader->chunks.size);;
 
-			SubMesh* bufferSubMeshes = (SubMesh*)buffer.push(sizeof(*sourceMesh->subMeshes) * sourceMesh->numSubMeshes);
-			destMesh->subMeshes = REL_PTR(buffer.buffer, bufferSubMeshes);
+		for (int currentMesh = 0; currentMesh < sourceChunk->meshes.size; currentMesh++)
+		{
+			Mesh* sourceMesh = sourceChunk->meshes(currentMesh); 
+			Mesh* destMesh = destChunk->meshes(currentMesh);
 
-			memcpy(bufferMeshes, sourceChunk->meshes, sizeof(*sourceChunk->meshes) * sourceChunk->numMeshes);
+			SubMesh* bufferSubMesh = (SubMesh*)buffer.push(sizeof(*sourceMesh->subMeshes.data) * sourceMesh->subMeshes.size); 
+			destMesh->subMeshes.data = decltype(bufferSubMesh)((char*)buffer.buffer - (char*)bufferSubMesh);
+			memcpy(bufferSubMesh, sourceMesh, sizeof(*sourceChunk->meshes.data) * sourceChunk->meshes.size);
+
+			Vertex* bufferVertex = (Vertex*)buffer.push(sizeof(*sourceMesh->vertices.data) * sourceMesh->vertices.size); 
+			destMesh->vertices.data = decltype(bufferVertex)((char*)buffer.buffer - (char*)bufferVertex); 
+			memcpy(bufferVertex, sourceMesh, sizeof(*sourceChunk->meshes.data) * sourceChunk->meshes.size);
 		}
 
 
 	}
+#endif
+
 
 	std::string path = filePath;
 	path += CYL_EXTENSION;
@@ -95,34 +121,12 @@ void buildCyLevel(Array<Chunk> chunks, char* filePath)
 	char* currentOffset = 0;
 	if (file.is_open())
 	{
-		CylHeader header = {};
-		strcpy(header.magic, MAGIC);
-		header.version = MAKE_VERSION(0, 0, 1);
-
-		header.numChunks = 1;
-		header.chunks = (Chunk*)sizeof(header);
-
-		WRITE(&header, sizeof(header));
-
-
-
-		for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
-		{
-			WRITE(chunks.data, chunks.size * sizeof(*chunks.data));
-		}
-
-		for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
-		{
-			Chunk chunk = chunks.data[currentChunk];
-			for (int currentMesh = 0; currentMesh < chunks[currentChunk].numMeshes; currentMesh++)
-			{
-				Mesh mesh = chunk.meshes[currentMesh];
-
-			}
-		}
+		file.write(buffer.buffer, fileSize);
 		
-
 		file.close();
 	}
 
 }
+
+#undef PREREPETITIVE
+#undef REPETITIVE
