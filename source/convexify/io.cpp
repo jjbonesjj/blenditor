@@ -3,6 +3,30 @@
 
 #define WRITE(bytes, size) currentOffset += size; file.write((char*)bytes, size)
 
+struct Stack
+{
+	char* buffer;
+	int size;
+	int used;
+
+	char* push(int amount)
+	{
+		Assert(used + amount <= size);
+		char* ptr = buffer + size;
+		size += amount;
+		return ptr;
+	}
+};
+
+Stack initStack(int amount)
+{
+	Stack stack = {};
+	stack.buffer = (char*)malloc(amount);
+	stack.used = 0;
+	stack.size = amount;
+}
+
+
 void buildCyLevel(Array<Chunk> chunks, char* filePath)
 {
 
@@ -25,6 +49,43 @@ void buildCyLevel(Array<Chunk> chunks, char* filePath)
 		}
 	}
 
+	Stack buffer = initStack(fileSize);
+
+	CylHeader* header = (CylHeader*)buffer.push(sizeof(CylHeader));
+
+	strcpy(header->magic, MAGIC);
+	header->version = MAKE_VERSION(0, 0, 1);
+
+	Chunk* bufferChunks = (Chunk*)buffer.push(sizeof(Chunk) * chunks.size);
+
+	header->numChunks = chunks.size;
+	header->chunks = REL_PTR(buffer.buffer, bufferChunks);
+
+	memcpy(bufferChunks, chunks.data, chunks.size * sizeof(*chunks.data));
+
+	for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
+	{
+		Chunk* sourceChunk = &chunks.data[currentChunk];
+		Chunk* destChunk = &bufferChunks[currentChunk];
+		
+		Mesh* bufferMeshes = (Mesh*)buffer.push(sizeof(*sourceChunk->meshes) * sourceChunk->numMeshes);
+		destChunk->meshes = REL_PTR(buffer.buffer, bufferMeshes);
+
+		memcpy(bufferMeshes, sourceChunk->meshes, sizeof(*sourceChunk->meshes) * sourceChunk->numMeshes);
+
+		for (int currentMesh = 0; currentMesh < sourceChunk->numMeshes; currentMesh++)
+		{
+			Mesh* sourceMesh = &sourceChunk->meshes[currentMesh];
+			Mesh* destMesh = &destChunk->meshes[currentMesh];
+
+			SubMesh* bufferSubMeshes = (SubMesh*)buffer.push(sizeof(*sourceMesh->subMeshes) * sourceMesh->numSubMeshes);
+			destMesh->subMeshes = REL_PTR(buffer.buffer, bufferSubMeshes);
+
+			memcpy(bufferMeshes, sourceChunk->meshes, sizeof(*sourceChunk->meshes) * sourceChunk->numMeshes);
+		}
+
+
+	}
 
 	std::string path = filePath;
 	path += CYL_EXTENSION;
@@ -42,6 +103,13 @@ void buildCyLevel(Array<Chunk> chunks, char* filePath)
 		header.chunks = (Chunk*)sizeof(header);
 
 		WRITE(&header, sizeof(header));
+
+
+
+		for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
+		{
+			WRITE(chunks.data, chunks.size * sizeof(*chunks.data));
+		}
 
 		for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
 		{

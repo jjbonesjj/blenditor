@@ -14,7 +14,8 @@ static const char MAGIC[MAGIC_LEN] = "scott.checko";
 static const char* CYL_EXTENSION = ".cyl";
 
 #define MAKE_VERSION(major, minor, mini) (major << 24) | (major << 16) | (mini << 0) 
-#define OFFSET(base, ptr) (((char*)ptr) + base)
+#define REL_PTR(base, ptr) decltype(ptr)((char*)base - (char*)ptr)
+#define ABS_PTR(ptr, offset) (((char*)ptr) + offset)
 
 struct Face
 {
