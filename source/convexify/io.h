@@ -35,8 +35,6 @@ struct Point
 		int posFixed[3];
 		float posFloating[3];
 	};
-
-	float normal[3];
 };
 
 struct Face

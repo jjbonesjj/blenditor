@@ -3,6 +3,7 @@
 #include "convexify.h"
 #include "transform.h"
 #include "io.h"
+#include <CGAL/Polygon_mesh_processing/compute_normal.h>
 
 #include <list>
 
@@ -56,24 +57,25 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	int vertexIndices = 0;
 	int facetsIndices = 0;
 	int edgeIndices = 0;
+	
 	for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
 	{
 		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
 		{
-			jt->id() = vertexIndices++;
+			/*jt->id() =*/ vertexIndices++;
 		}
 
 		for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
 		{
-			jt->id() = facetsIndices++;
+			/*jt->id() = */facetsIndices++;
 		}
 
 		for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
 		{
-			jt->id() = edgeIndices++;
+			/*jt->id() = */edgeIndices++;
 		}
 	}
-
+	
 	// build the mesh
 	Mesh mesh = {};
 	mesh.subMeshes.size = convex_parts.size();
@@ -108,9 +110,9 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 			} while (++circ != jt->facet_begin());
 			std::cout << '\n';
 
-
-			
-			// todo compute normal of face
+			// compute face normals
+			// TODO
+			// subMesh.faces(facetsCounter)->normal;
 
 		}
 
