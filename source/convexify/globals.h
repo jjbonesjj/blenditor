@@ -11,3 +11,5 @@ const bool VERBOSE_LOGGING = false;
 // CREATION) 
 //***********************************
 const bool TRIANGULATE_MESHES = true;
+
+#define DEBUG_WITH_MAGIC true

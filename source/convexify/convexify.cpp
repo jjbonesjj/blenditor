@@ -80,7 +80,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	mesh.subMeshes.data = (SubMesh*)malloc(sizeof(SubMesh) * mesh.subMeshes.size);
 
 	mesh.vertices.size = vertexIndices;
-	mesh.vertices.data = (Vertex*)malloc(sizeof(Vertex) * mesh.vertices.size);
+	mesh.vertices.data = (Point*)malloc(sizeof(Point) * mesh.vertices.size);
 	int subMeshCounter = 0;
 	for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
 	{
@@ -102,7 +102,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 				std::cout << circ->vertex()->point().y() << " ";
 				std::cout << circ->vertex()->point().z() << " } ";
 
-				subMesh.faces[facetsCounter].indices[facetCounter] = circ->vertex()->id();
+				subMesh.faces(facetsCounter)->indices[facetCounter] = circ->vertex()->id();
 				
 				facetCounter++;
 			} while (++circ != jt->facet_begin());
@@ -120,9 +120,9 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 		int meshVertexCounter = 0;
 		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
 		{
-			mesh.vertices(meshVertexCounter)->coords.x = jt->point().x().exact().to_double();
-			mesh.vertices(meshVertexCounter)->coords.y = jt->point().y().exact().to_double();
-			mesh.vertices(meshVertexCounter)->coords.z = jt->point().z().exact().to_double();
+			mesh.vertices(meshVertexCounter)->posFloating[0] = (float)jt->point().x().exact().to_double();
+			mesh.vertices(meshVertexCounter)->posFloating[1] = (float)jt->point().y().exact().to_double();
+			mesh.vertices(meshVertexCounter)->posFloating[2] = (float)jt->point().z().exact().to_double();
 			meshVertexCounter++;
 		}
 	}
@@ -215,9 +215,9 @@ EXPORT char* passArray(int* arr, int size)
 	return nullptr;
 }
 
-EXPORT Point sumPointArray(Point* arr, int size)
+EXPORT BlenderPoint sumPointArray(BlenderPoint* arr, int size)
 {
-	Point sum = {};
+	BlenderPoint sum = {};
 	if (arr)
 	{
 		for (int i = 0; i < size; i++)

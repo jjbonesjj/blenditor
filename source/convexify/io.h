@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <fstream>
+#include "globals.h"
 
 typedef uint32_t u32;
 typedef u32 absOffset;
@@ -18,38 +19,64 @@ static const char* CYL_EXTENSION = ".cyl";
 #define REL_PTR(ptr, base) decltype(ptr)((char*)ptr - (char*)base)
 #define ABS_PTR(ptr, offset) (((char*)ptr) + offset)
 
+#if DEBUG_WITH_MAGIC
 #define BUILD_MAGIC(ptr, value) strncpy(ptr->magic, #value#value#value#value#value , MAGIC_LEN_MINOR)
+#else
+#define BUILD_MAGIC(ptr, value)
+#endif
+
+struct Point
+{
+#if DEBUG_WITH_MAGIC
+	char magic[MAGIC_LEN_MINOR];
+#endif
+	union
+	{
+		int posFixed[3];
+		float posFloating[3];
+	};
+
+	float normal[3];
+};
 
 struct Face
 {
+#if DEBUG_WITH_MAGIC
 	char magic[MAGIC_LEN_MINOR];
+#endif
 	u32 indices[3];
 	float normal[3];
 };
 
 struct SubMesh
 {
+#if DEBUG_WITH_MAGIC
 	char magic[MAGIC_LEN_MINOR];
+#endif
 	Array<Face> faces;
 };
 
 struct Mesh
 {
+#if DEBUG_WITH_MAGIC
 	char magic[MAGIC_LEN_MINOR];
+#endif
 	Array<SubMesh> subMeshes;
 
 	// vertices for all submeshes
 	// submeshes are expected to share many faces
-	Array<Vertex> vertices;
+	Array<Point> vertices;
 };
 
 struct Chunk
 {
+#if DEBUG_WITH_MAGIC
 	char magic[MAGIC_LEN_MINOR];
+#endif
 	Array<Mesh> meshes;
 };
 
-enum NumberType
+enum NumberType : bool
 {
 	FixedPoint,
 	FloatingPoint
@@ -59,8 +86,9 @@ struct CylHeader
 {
 	char magic[MAGIC_LEN];
 	u32 version;
-
+	bool containsMagic;
 	NumberType numberType;
+
 	union
 	{
 		struct // fixed point specific

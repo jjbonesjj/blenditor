@@ -26,7 +26,7 @@ typedef typename C_Vertex::Point												C_Point;
 typedef C_Mesh::Vertex_index													C_VertexIndex;
 typedef C_Mesh::Face_index														C_FaceIndex;
 
-struct Point
+struct BlenderPoint
 {
 	double x, y, z;
 };

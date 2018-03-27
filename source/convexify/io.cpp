@@ -69,6 +69,9 @@ void buildCyLevel(Array<Chunk> chunks, char* filePath)
 	source.version = MAKE_VERSION(0, 0, 1);
 	source.chunks.size = chunks.size;
 	source.chunks.data = chunks.data;
+	source.containsMagic = DEBUG_WITH_MAGIC;
+	source.numberType = FloatingPoint;
+	source.fixedPointNumFractionalBits = 0;
 
 
 	CylHeader* destCylHeader = (CylHeader*)buffer.push(sizeof(CylHeader));
@@ -101,7 +104,7 @@ void buildCyLevel(Array<Chunk> chunks, char* filePath)
 			memcpy(bufferSubMesh, sourceMesh->subMeshes.data, subMeshesSizeBytes);
 
 			int verticesSizeBytes = sizeof(*sourceMesh->vertices.data) * sourceMesh->vertices.size;
-			Vertex* bufferVertex = (Vertex*)buffer.push(verticesSizeBytes);
+			Point* bufferVertex = (Point*)buffer.push(verticesSizeBytes);
 			destMesh->vertices.data = REL_PTR(bufferVertex, buffer.buffer);
 			memcpy(bufferVertex, sourceMesh->vertices.data, verticesSizeBytes);
 
@@ -121,6 +124,12 @@ void buildCyLevel(Array<Chunk> chunks, char* filePath)
 					Face* destFace = &bufferFaces[currentFace];
 					BUILD_MAGIC(destFace, Face);
 				}
+			}
+
+			for (int currentPoint = 0; currentPoint < sourceMesh->vertices.size; currentPoint++)
+			{
+				Point* destPoint = &bufferVertex[currentPoint];
+				BUILD_MAGIC(destPoint, Point);
 			}
 		}
 	}
