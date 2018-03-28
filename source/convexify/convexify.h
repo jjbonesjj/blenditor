@@ -13,80 +13,91 @@
 #include <CGAL/Polyhedron_items_with_id_3.h> 
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel						C_Kernel;
-typedef C_Kernel::Point_3														C_Point3;
+
 typedef CGAL::Polyhedron_traits_with_normals_3<C_Kernel>						C_Traits;
 typedef CGAL::Nef_polyhedron_3<C_Kernel>										C_NefPolyhedron;
-typedef CGAL::Polyhedron_3<C_Kernel, CGAL::Polyhedron_items_with_id_3>			C_Polyhedron;
-typedef CGAL::Surface_mesh<C_Point3>											C_Mesh;
+typedef CGAL::Polyhedron_3<C_Traits, CGAL::Polyhedron_items_with_id_3>			C_Polyhedron;
+typedef C_Kernel::Point_3														CK_Point;
+typedef CGAL::Surface_mesh<CK_Point>											C_Mesh;
 
 typedef C_Polyhedron::HalfedgeDS												C_Halfedge;
 typedef C_NefPolyhedron::Halfedge												C_NefHalfedge;
 typedef typename C_Halfedge::Vertex												C_Vertex;
-typedef typename C_Vertex::Point												C_Point;
+typedef typename C_Vertex::Point												CH_Point;
+typedef C_Kernel::Vector_3														C_Vector;
 
 typedef C_Mesh::Vertex_index													C_VertexIndex;
 typedef C_Mesh::Face_index														C_FaceIndex;
 
-struct BlenderPoint
-{
-	double x, y, z;
-};
+typedef boost::graph_traits<C_Polyhedron>::vertex_descriptor					C_VertexDescriptor;
+typedef boost::graph_traits<C_Polyhedron>::face_descriptor   					C_FaceDescriptor;
 
-template <class T>
-struct Array
+namespace Cy
 {
-	int size;
-	T* data;
 
-	T operator[](size_t index)
+	struct BlenderPoint
 	{
-		return this->data[index];
-	}
+		double x, y, z;
+	};
 
-	T* operator()(size_t index)
+	template <class T>
+	struct Array
 	{
-		return &this->data[index];
-	}
-};
+		// NOTE: DO NOT CHANGE THE ORDER OF THIS STRUCT
+		T* data;
+		int size;
 
-struct Polygon
-{
-	int numVertices;
-	int vertices[4];
-};
 
-struct Vector
-{
-	double x, y, z;
-};
+		T operator[](size_t index)
+		{
+			return this->data[index];
+		}
 
-struct Vertex
-{
-	Vector coords;
-	Vector normal;
-	int index;
-};
+		T* operator()(size_t index)
+		{
+			return &this->data[index];
+		}
+	};
 
-struct Material
-{
+	struct Polygon
+	{
+		int numVertices;
+		int vertices[4];
+	};
 
-};
+	struct Vector
+	{
+		double x, y, z;
+	};
 
-struct BlenderMesh
-{
-	Array<Polygon> polygons;
-	Array<Vertex> vertices;
-};
+	struct Vertex
+	{
+		Vector coords;
+		Vector normal;
+		int index;
+	};
 
-struct Object
-{
+	struct Material
+	{
 
-};
+	};
 
-struct Texture
-{
+	struct BlenderMesh
+	{
+		Array<Polygon> polygons;
+		Array<Vertex> vertices;
+	};
 
-};
+	struct Object
+	{
+
+	};
+
+	struct Texture
+	{
+
+	};
+}
 
 #define EXPORT extern "C" __declspec(dllexport)
 

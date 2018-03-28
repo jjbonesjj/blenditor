@@ -4,8 +4,11 @@
 #include "transform.h"
 #include "io.h"
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <boost/property_map/property_map.hpp>
 
 #include <list>
+
+using namespace Cy;
 
 Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 {
@@ -84,47 +87,54 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	mesh.vertices.size = vertexIndices;
 	mesh.vertices.data = (Point*)malloc(sizeof(Point) * mesh.vertices.size);
 	int subMeshCounter = 0;
-	for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
+	for (auto cmesh = convex_parts.begin(); cmesh != convex_parts.end(); cmesh++)
 	{
+		CGAL::Unique_hash_map<C_FaceDescriptor, Vector> fnormals;
+		CGAL::Polygon_mesh_processing::compute_face_normals(cmesh, boost::make_assoc_property_map(fnormals));
+
 		SubMesh subMesh = {};
-		subMesh.faces.size = it->size_of_facets();
+		subMesh.faces.size = cmesh->size_of_facets();
 		subMesh.faces.data = (Face*)malloc(sizeof(Face) * subMesh.faces.size);
 		int facetsCounter = 0;
-		for (C_Polyhedron::Face_iterator jt = it->facets_begin(); 
-			 jt != it->facets_end(); 
-			 jt++, facetsCounter++) 
+		for (C_Polyhedron::Face_iterator face = cmesh->facets_begin();
+			 face != cmesh->facets_end();
+			 face++, facetsCounter++)
 		{
-			C_Polyhedron::Halfedge_around_facet_circulator circ = jt->facet_begin();
+			C_Polyhedron::Halfedge_around_facet_circulator circ = face->facet_begin();
 
 			int facetCounter = 0;
-			std::cout << "Vertex indices of facet: " << jt->id();
+			std::cout << "Vertex indices of facet: " << face->id();
 			do {
 				std::cout << " [" << circ->vertex()->id() << "] ";
 				std::cout << "{ " << circ->vertex()->point().x() << " ";
 				std::cout << circ->vertex()->point().y() << " ";
 				std::cout << circ->vertex()->point().z() << " } ";
 
-				subMesh.faces(facetsCounter)->indices[facetCounter] = circ->vertex()->id();
+				size_t index = circ->vertex()->id();
+				subMesh.faces(facetsCounter)->indices[facetCounter] = index;
+	
 				
 				facetCounter++;
-			} while (++circ != jt->facet_begin());
+			} while (++circ != face->facet_begin());
 			std::cout << '\n';
 
 			// compute face normals
 			// TODO
 			// subMesh.faces(facetsCounter)->normal;
-
+			//subMesh.faces(facetsCounter)->normal[0] = fnormals[face].x;
+			//subMesh.faces(facetsCounter)->normal[1] = fnormals[face].y;
+			//subMesh.faces(facetsCounter)->normal[2] = fnormals[face].z;
 		}
 
 		*mesh.subMeshes(subMeshCounter) = subMesh;
 		subMeshCounter++;
 
 		int meshVertexCounter = 0;
-		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
+		for (C_Polyhedron::Vertex_iterator vertex = cmesh->vertices_begin(); vertex  != cmesh->vertices_end(); vertex++)
 		{
-			mesh.vertices(meshVertexCounter)->posFloating[0] = (float)jt->point().x().exact().to_double();
-			mesh.vertices(meshVertexCounter)->posFloating[1] = (float)jt->point().y().exact().to_double();
-			mesh.vertices(meshVertexCounter)->posFloating[2] = (float)jt->point().z().exact().to_double();
+			mesh.vertices(meshVertexCounter)->posFloating[0] = (float)vertex->point().x().exact().to_double();
+			mesh.vertices(meshVertexCounter)->posFloating[1] = (float)vertex->point().y().exact().to_double();
+			mesh.vertices(meshVertexCounter)->posFloating[2] = (float)vertex->point().z().exact().to_double();
 			meshVertexCounter++;
 		}
 	}
@@ -167,8 +177,8 @@ static PyObject* test(PyObject* self, PyObject* args)
 		{ -NINENINE,	1.0f,	1.0f	},
 	};
 
-	Array<Polygon> faces = { 6, polys };
-	Array<Vertex> vertices = { 8, verts };
+	Array<Polygon> faces = { polys, 6 };
+	Array<Vertex> vertices = { verts , 8 };
 
 	Mesh mesh = convexify(vertices, faces);
 

@@ -25,82 +25,85 @@ static const char* CYL_EXTENSION = ".cyl";
 #define BUILD_MAGIC(ptr, value)
 #endif
 
-struct Point
+namespace Cy
 {
-#if DEBUG_WITH_MAGIC
-	char magic[MAGIC_LEN_MINOR];
-#endif
-	union
+	struct Point
 	{
-		int posFixed[3];
-		float posFloating[3];
-	};
-};
-
-struct Face
-{
 #if DEBUG_WITH_MAGIC
-	char magic[MAGIC_LEN_MINOR];
+		char magic[MAGIC_LEN_MINOR];
 #endif
-	u32 indices[3];
-	float normal[3];
-};
-
-struct SubMesh
-{
-#if DEBUG_WITH_MAGIC
-	char magic[MAGIC_LEN_MINOR];
-#endif
-	Array<Face> faces;
-};
-
-struct Mesh
-{
-#if DEBUG_WITH_MAGIC
-	char magic[MAGIC_LEN_MINOR];
-#endif
-	Array<SubMesh> subMeshes;
-
-	// vertices for all submeshes
-	// submeshes are expected to share many faces
-	Array<Point> vertices;
-};
-
-struct Chunk
-{
-#if DEBUG_WITH_MAGIC
-	char magic[MAGIC_LEN_MINOR];
-#endif
-	Array<Mesh> meshes;
-};
-
-enum NumberType : bool
-{
-	FixedPoint,
-	FloatingPoint
-};
-
-struct CylHeader
-{
-	char magic[MAGIC_LEN];
-	u32 version;
-	bool containsMagic;
-	NumberType numberType;
-
-	union
-	{
-		struct // fixed point specific
+		union
 		{
-			u32 fixedPointNumFractionalBits;
-		};
-		struct // floating point specific
-		{
-
+			int posFixed[3];
+			float posFloating[3];
 		};
 	};
 
-	Array<Chunk> chunks;
+	struct Face
+	{
+#if DEBUG_WITH_MAGIC
+		char magic[MAGIC_LEN_MINOR];
+#endif
+		u32 indices[3];
+		float normal[3];
+	};
 
-};
+	struct SubMesh
+	{
+#if DEBUG_WITH_MAGIC
+		char magic[MAGIC_LEN_MINOR];
+#endif
+		Array<Face> faces;
+	};
 
-void buildCyLevel(Array<Chunk> chunks, char* filePath);
+	struct Mesh
+	{
+#if DEBUG_WITH_MAGIC
+		char magic[MAGIC_LEN_MINOR];
+#endif
+		Array<SubMesh> subMeshes;
+
+		// vertices for all submeshes
+		// submeshes are expected to share many faces
+		Array<Point> vertices;
+	};
+
+	struct Chunk
+	{
+#if DEBUG_WITH_MAGIC
+		char magic[MAGIC_LEN_MINOR];
+#endif
+		Array<Mesh> meshes;
+	};
+
+	enum NumberType : bool
+	{
+		FixedPoint,
+		FloatingPoint
+	};
+
+	struct CylHeader
+	{
+		char magic[MAGIC_LEN];
+		u32 version;
+		bool containsMagic;
+		NumberType numberType;
+
+		union
+		{
+			struct // fixed point specific
+			{
+				u32 fixedPointNumFractionalBits;
+			};
+			struct // floating point specific
+			{
+
+			};
+		};
+
+		Array<Chunk> chunks;
+
+	};
+
+	void buildCyLevel(Array<Chunk> chunks, char* filePath);
+}

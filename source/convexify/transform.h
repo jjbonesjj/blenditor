@@ -1,16 +1,19 @@
 #pragma once
 #include "convexify.h"
 
-C_NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> polygons);
-
-
-struct BlenderData
+namespace Cy
 {
-	bool valid;
-	Array<Material> materials;
-	Array<BlenderMesh> meshes;
-	Array<Object> objects;
-	Array<Texture> textures;
-};
+	C_NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> polygons);
 
-BlenderData extractData(PyObject* blenderData);
+
+	struct BlenderData
+	{
+		bool valid;
+		Array<Material> materials;
+		Array<BlenderMesh> meshes;
+		Array<Object> objects;
+		Array<Texture> textures;
+	};
+
+	BlenderData extractData(PyObject* blenderData);
+}
