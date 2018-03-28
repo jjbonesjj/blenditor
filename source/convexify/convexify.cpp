@@ -3,10 +3,11 @@
 #include "convexify.h"
 #include "transform.h"
 #include "io.h"
-#include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/Surface_mesh.h>
 #include <boost/property_map/property_map.hpp>
-
+#include <CGAL/boost/graph/properties.h>
 #include <list>
+#include <CGAL/Polygon_mesh_processing/compute_normal.h>
 
 using namespace Cy;
 
@@ -65,17 +66,17 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	{
 		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
 		{
-			/*jt->id() =*/ vertexIndices++;
+			jt->id() = vertexIndices++;
 		}
 
 		for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
 		{
-			/*jt->id() = */facetsIndices++;
+			jt->id() = facetsIndices++;
 		}
 
 		for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
 		{
-			/*jt->id() = */edgeIndices++;
+			jt->id() = edgeIndices++;
 		}
 	}
 	
@@ -89,8 +90,13 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	int subMeshCounter = 0;
 	for (auto cmesh = convex_parts.begin(); cmesh != convex_parts.end(); cmesh++)
 	{
-		CGAL::Unique_hash_map<C_FaceDescriptor, Vector> fnormals;
-		CGAL::Polygon_mesh_processing::compute_face_normals(cmesh, boost::make_assoc_property_map(fnormals));
+		std::map<C_FaceDescriptor, C_Vector> fnormals;
+		std::map<C_VertexDescriptor, C_Vector> vnormals;
+
+		CGAL::Polygon_mesh_processing::compute_normals(*cmesh,
+													   boost::make_assoc_property_map(vnormals),
+													   boost::make_assoc_property_map(fnormals));
+
 
 		SubMesh subMesh = {};
 		subMesh.faces.size = cmesh->size_of_facets();
@@ -112,29 +118,28 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 
 				size_t index = circ->vertex()->id();
 				subMesh.faces(facetsCounter)->indices[facetCounter] = index;
-	
 				
 				facetCounter++;
 			} while (++circ != face->facet_begin());
 			std::cout << '\n';
 
-			// compute face normals
-			// TODO
-			// subMesh.faces(facetsCounter)->normal;
-			//subMesh.faces(facetsCounter)->normal[0] = fnormals[face].x;
-			//subMesh.faces(facetsCounter)->normal[1] = fnormals[face].y;
-			//subMesh.faces(facetsCounter)->normal[2] = fnormals[face].z;
+
+			subMesh.faces(facetsCounter)->normal[0] = fnormals[face].x().floatValue();
+			subMesh.faces(facetsCounter)->normal[1] = fnormals[face].y().floatValue();
+			subMesh.faces(facetsCounter)->normal[2] = fnormals[face].z().floatValue();
+
 		}
 
 		*mesh.subMeshes(subMeshCounter) = subMesh;
 		subMeshCounter++;
 
+		// get vertices
 		int meshVertexCounter = 0;
 		for (C_Polyhedron::Vertex_iterator vertex = cmesh->vertices_begin(); vertex  != cmesh->vertices_end(); vertex++)
 		{
-			mesh.vertices(meshVertexCounter)->posFloating[0] = (float)vertex->point().x().exact().to_double();
-			mesh.vertices(meshVertexCounter)->posFloating[1] = (float)vertex->point().y().exact().to_double();
-			mesh.vertices(meshVertexCounter)->posFloating[2] = (float)vertex->point().z().exact().to_double();
+			mesh.vertices(meshVertexCounter)->posFloating[0] = (float)vertex->point().x().doubleValue();
+			mesh.vertices(meshVertexCounter)->posFloating[1] = (float)vertex->point().y().doubleValue();
+			mesh.vertices(meshVertexCounter)->posFloating[2] = (float)vertex->point().z().doubleValue();
 			meshVertexCounter++;
 		}
 	}
@@ -257,9 +262,9 @@ static PyMethodDef convexifyMethods[] = {
 static struct PyModuleDef moduleDefinition =
 {
 	PyModuleDef_HEAD_INIT,
-	"convexify", /* name of module */
-	"",          /* module documentation, may be NULL */
-	-1,          /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
+	"convexify", // name of module 
+	"",          // module documentation, may be NULL 
+	-1,          // size of per-interpreter state of the module, or -1 if the module keeps state in global variables.
 	convexifyMethods
 };
 

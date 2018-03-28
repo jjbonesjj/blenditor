@@ -17,7 +17,7 @@ namespace Cy
 	C_NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> faces)
 	{
 
-		std::vector<CH_Point> points;
+		std::vector<CK_Point> points;
 		std::vector<std::vector<size_t>> polygons;
 
 		points.resize(vertices.size);
@@ -26,7 +26,7 @@ namespace Cy
 		printf("hello1\n");
 		for (int i = 0; i < vertices.size; i++)
 		{
-			points[i] = CH_Point(vertices[i].coords.x, vertices[i].coords.y, vertices[i].coords.z);
+			points[i] = CK_Point(vertices[i].coords.x, vertices[i].coords.y, vertices[i].coords.z);
 		}
 		printf("hello2\n");
 		for (int i = 0; i < faces.size; i++)
@@ -56,7 +56,7 @@ namespace Cy
 		Assert(is_valid(mesh, VERBOSE_LOGGING));
 		Assert(is_closed(mesh));
 
-		int i = 0;
+		/*int i = 0;
 		for (C_Polyhedron::Vertex_iterator it = mesh.vertices_begin(); it != mesh.vertices_end(); it++)
 		{
 			it->id() = i++;
@@ -70,7 +70,7 @@ namespace Cy
 		for (C_Polyhedron::Edge_iterator it = mesh.edges_begin(); it != mesh.edges_end(); it++)
 		{
 			it->id() = i++;
-		}
+		}*/
 
 		// edges etc. 
 
