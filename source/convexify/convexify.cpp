@@ -8,6 +8,7 @@
 #include <CGAL/boost/graph/properties.h>
 #include <list>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 
 using namespace Cy;
 
@@ -64,6 +65,10 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	
 	for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
 	{
+		if (TRIANGULATE_MESHES)
+		{
+			Assert(CGAL::Polygon_mesh_processing::triangulate_faces(*it));
+		}
 		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
 		{
 			jt->id() = vertexIndices++;
@@ -80,7 +85,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 		}
 	}
 
-	u64 faceCount;
+	u64 faceCount = 0;
 	
 	// build the mesh
 	Mesh mesh = {};
@@ -99,7 +104,6 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 		CGAL::Polygon_mesh_processing::compute_normals(*cmesh,
 													   boost::make_assoc_property_map(vnormals),
 													   boost::make_assoc_property_map(fnormals));
-
 
 		SubMesh subMesh = {};
 		subMesh.faces.size = cmesh->size_of_facets();
@@ -125,12 +129,12 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 				facetCounter++;
 			} while (++circ != face->facet_begin());
 			std::cout << '\n';
-
+			Assert(facetCounter == 3);
 
 			subMesh.faces(facetsCounter)->normal[0] = fnormals[face].x().floatValue();
 			subMesh.faces(facetsCounter)->normal[1] = fnormals[face].y().floatValue();
 			subMesh.faces(facetsCounter)->normal[2] = fnormals[face].z().floatValue();
-			faceCount += 3;
+			faceCount++;
 		}
 
 		*mesh.subMeshes(subMeshCounter) = subMesh;
@@ -151,7 +155,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	Chunk chunk = {};
 	chunk.meshes.size = 1;
 	chunk.meshes.data = &mesh;
-	chunk.meshCount = 1;
+	chunk.subMeshCount = subMeshCounter;
 	chunk.faceCount = faceCount;
 	
 	Array<Chunk> chunks = {};
@@ -177,14 +181,14 @@ static PyObject* test(PyObject* self, PyObject* args)
 #define NINENINE 0.999922222
 	Vertex verts[8] = 
 	{
-		{ 1.0f,		NINENINE,	-1.0f	},
+		{ 1.0f,		1.0f,	-1.0f	},
 		{ 1.0f,		-1.0f,	-1.0f	},
 		{ -1.0f,	-1.0f,	-1.0f	},
 		{ -1.0f,	1.0f,	-1.0f	},
-		{ 1.0f,		NINENINE,	1.0f	},
-		{ NINENINE,		-1.0000001111f,	1.0f	},
-		{ -1.0f,	-NINENINE,	1.0f	},
-		{ -NINENINE,	1.0f,	1.0f	},
+		{ 1.0f,		1.0f,	1.0f	},
+		{ 1.0f,		-1.0f,	1.0f	},
+		{ -1.0f,	-1.0f,	1.0f	},
+		{ -1.0f,	1.0f,	1.0f	},
 	};
 
 	Array<Polygon> faces = { polys, 6 };

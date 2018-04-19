@@ -78,7 +78,7 @@ namespace Cy
 		Array<Mesh> meshes;
 
 		u64 faceCount;
-		u64 meshCount;
+		u64 subMeshCount;
 	};
 
 	enum NumberType : bool
