@@ -79,6 +79,8 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 			jt->id() = edgeIndices++;
 		}
 	}
+
+	u64 faceCount;
 	
 	// build the mesh
 	Mesh mesh = {};
@@ -88,6 +90,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	mesh.vertices.size = vertexIndices;
 	mesh.vertices.data = (Point*)malloc(sizeof(Point) * mesh.vertices.size);
 	int subMeshCounter = 0;
+
 	for (auto cmesh = convex_parts.begin(); cmesh != convex_parts.end(); cmesh++)
 	{
 		std::map<C_FaceDescriptor, C_Vector> fnormals;
@@ -127,7 +130,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 			subMesh.faces(facetsCounter)->normal[0] = fnormals[face].x().floatValue();
 			subMesh.faces(facetsCounter)->normal[1] = fnormals[face].y().floatValue();
 			subMesh.faces(facetsCounter)->normal[2] = fnormals[face].z().floatValue();
-
+			faceCount += 3;
 		}
 
 		*mesh.subMeshes(subMeshCounter) = subMesh;
@@ -148,6 +151,8 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	Chunk chunk = {};
 	chunk.meshes.size = 1;
 	chunk.meshes.data = &mesh;
+	chunk.meshCount = 1;
+	chunk.faceCount = faceCount;
 	
 	Array<Chunk> chunks = {};
 	chunks.size = 1;
