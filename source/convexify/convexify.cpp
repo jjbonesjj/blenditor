@@ -50,16 +50,6 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 
 	printf("END CONVEXIFY\n");
 
-	if (nef.is_convex())
-	{
-		printf("SUCCESS CONVEXIFY\n");
-	}
-	else
-	{
-		printf("ERROR CONVEXIFY\n");
-	}
-
-
 	// initialize the indices
 	int vertexIndices = 0;
 	int facetsIndices = 0;
@@ -182,6 +172,7 @@ static PyObject* test(PyObject* self, PyObject* args)
 		{ 4, 4, 0, 3, 7 }
 	};
 	const float half = 0.5f;
+#if 0
 	Vertex verts[8] = 
 	{
 		{ half,		half,	-half	},
@@ -193,7 +184,19 @@ static PyObject* test(PyObject* self, PyObject* args)
 		{ -half,	-half,	half	},
 		{ -half,	half,	half	},
 	};
-
+#else
+	Vertex verts[8] =
+	{
+		{	1.0000000000, 0.9999999404, - 1.0000000000	},
+		{	1.0000000000, - 1.0000000000, - 1.0000000000 },
+		{	-1.0000001192, - 0.9999998212, - 1.0000000000 },
+		{	-0.9999996424, 1.0000003576, - 1.0000000000 },
+		{	1.0000004768, 0.9999994636, 1.0000000000 },
+		{	0.9999993443, - 1.0000005960, 1.0000000000 },
+		{	-1.0000003576, - 0.9999996424, 1.0000000000 },
+		{	-0.9999999404, 1.0000000000, 1.0000000000 }
+	};
+#endif
 	Array<Polygon> faces = { polys, 6 };
 	Array<Vertex> vertices = { verts , 8 };
 
