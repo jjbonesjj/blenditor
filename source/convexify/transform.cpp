@@ -50,10 +50,12 @@ namespace Cy
 		{
 			printf("some points were duped when orienting polygon soup\n");
 		}
-
+		printf("hello4\n");
 		C_Polyhedron mesh = {};
 		CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, mesh);
+		printf("hello5\n");
 		Assert(is_valid(mesh, VERBOSE_LOGGING));
+		printf("hello6\n");
 		Assert(is_closed(mesh));
 
 		/*int i = 0;
@@ -74,25 +76,28 @@ namespace Cy
 
 		// edges etc. 
 
-
+		printf("hello7\n");
 		// ensure that the mesh orientation goes outward
 		if (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh))
 		{
+			printf("hello8\n");
 			CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
 		}
-
+		printf("hello9\n");
 		if (TRIANGULATE_MESHES)
 		{
+			printf("hello10\n");
 			Assert(CGAL::Polygon_mesh_processing::triangulate_faces(mesh));
 		}
-
+		printf("hello11\n");
 		Assert(is_valid(mesh, VERBOSE_LOGGING));
+		printf("hello12\n");
 		Assert(is_closed(mesh));
-
+		printf("hello13\n");
 		auto nef = C_NefPolyhedron(mesh);
-
+		printf("hello14\n");
 		Assert(nef.is_valid(VERBOSE_LOGGING));
-
+		printf("hello15\n");
 		return nef;
 	}
 

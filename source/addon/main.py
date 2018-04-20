@@ -74,14 +74,11 @@ class ExportLevel(bpy.types.Operator):
         #    point = Point(coord.x, coord.y, coord.z)
         #    vertexArray[index] = point;*/
 
-        print(dir(bpy.data.meshes['Cube'].polygons[0].vertices))
-        print(bpy.data.meshes['Cube'].polygons[0].vertices[1])
+        #print(dir(bpy.data.meshes['Cube'].polygons[0].vertices))
+        #print(bpy.data.meshes['Cube'].polygons[0].vertices[1])
 
         #convexify.convexifyMesh.restype = c_bool
         result = convexify.convexifyMesh(bpy.data, bpy.context)
-
-
-
 
 
         #print("result is ", result)
@@ -99,7 +96,7 @@ def menu_func_export(self, context):
 # wtb better synonym for class.
 breeds = (
     ExportLevel,
-    Blenditor    
+   # Blenditor    
 ) 
 
 def register():

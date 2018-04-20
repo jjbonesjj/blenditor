@@ -29,10 +29,10 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 
 
 	C_NefPolyhedron nef = make_nef(vertices, faces);
-
+	printf("hello16\n");
 	CGAL::convex_decomposition_3(nef);
 	std::list<C_Polyhedron> convex_parts;
-
+	printf("hello17\n");
 	// the first volume is the outer volume, which is 
 	// ignored in the decomposition
 	typedef C_NefPolyhedron::Volume_const_iterator Volume_const_iterator;
@@ -40,11 +40,13 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	for (; ci != nef.volumes_end(); ++ci) {
 		if (ci->mark()) {
 			C_Polyhedron P;
+			printf("hello21\n");
 			nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
+			printf("hello22\n");
 			convex_parts.push_back(P);
 		}
 	}
-	std::cout << "decomposition into " << convex_parts.size() << " convex parts " << std::endl;
+	printf("decomp into %zi convex parts\n", convex_parts.size());
 
 	printf("END CONVEXIFY\n");
 
@@ -67,6 +69,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	{
 		if (TRIANGULATE_MESHES)
 		{
+			printf("hello18\n");
 			Assert(CGAL::Polygon_mesh_processing::triangulate_faces(*it));
 		}
 		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
@@ -100,7 +103,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	{
 		std::map<C_FaceDescriptor, C_Vector> fnormals;
 		std::map<C_VertexDescriptor, C_Vector> vnormals;
-
+		printf("hello19\n");
 		CGAL::Polygon_mesh_processing::compute_normals(*cmesh,
 													   boost::make_assoc_property_map(vnormals),
 													   boost::make_assoc_property_map(fnormals));
@@ -161,7 +164,7 @@ Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
 	Array<Chunk> chunks = {};
 	chunks.size = 1;
 	chunks.data = &chunk;
-
+	printf("hello20\n");
 	buildCyLevel(chunks, "level1");
 
 	return mesh;
@@ -178,17 +181,17 @@ static PyObject* test(PyObject* self, PyObject* args)
 		{ 4, 2, 6, 7, 3 },
 		{ 4, 4, 0, 3, 7 }
 	};
-#define NINENINE 0.999922222
+	const float half = 0.5f;
 	Vertex verts[8] = 
 	{
-		{ 1.0f,		1.0f,	-1.0f	},
-		{ 1.0f,		-1.0f,	-1.0f	},
-		{ -1.0f,	-1.0f,	-1.0f	},
-		{ -1.0f,	1.0f,	-1.0f	},
-		{ 1.0f,		1.0f,	1.0f	},
-		{ 1.0f,		-1.0f,	1.0f	},
-		{ -1.0f,	-1.0f,	1.0f	},
-		{ -1.0f,	1.0f,	1.0f	},
+		{ half,		half,	-half	},
+		{ half,		-half,	-half	},
+		{ -half,	-half,	-half	},
+		{ -half,	half,	-half	},
+		{ half,		half,	half	},
+		{ half,		-half,	half	},
+		{ -half,	-half,	half	},
+		{ -half,	half,	half	},
 	};
 
 	Array<Polygon> faces = { polys, 6 };
@@ -217,7 +220,6 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 	Mesh mesh = convexify(data.meshes[0].vertices, data.meshes[0].polygons);
 
 	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
-
 }
 
 EXPORT int paramless()
@@ -281,7 +283,6 @@ PyMODINIT_FUNC PyInit_convexify()
 {
 	return PyModule_Create(&moduleDefinition);
 }
-
 
 int main(int argc, const char** argv)
 {

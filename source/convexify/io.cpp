@@ -83,11 +83,13 @@ namespace Cy
 		destCylHeader->chunks.size = chunks.size;
 		destCylHeader->chunks.data = (Chunk*)buffer.push(sizeof(Chunk) * destCylHeader->chunks.size);
 		memcpy(destCylHeader->chunks.data, sourceCylHeader->chunks.data, sizeof(Chunk) * destCylHeader->chunks.size);
+		Chunk* bufferChunk = destCylHeader->chunks.data;
+		destCylHeader->chunks.data = REL_PTR(destCylHeader->chunks.data, buffer.buffer);
 
 		for (int currentChunk = 0; currentChunk < chunks.size; currentChunk++)
 		{
 			Chunk* sourceChunk = sourceCylHeader->chunks(currentChunk);
-			Chunk* destChunk = destCylHeader->chunks(currentChunk);
+			Chunk* destChunk = &bufferChunk[currentChunk];
 			BUILD_MAGIC(destChunk, Chunk);
 			int meshesSizeBytes = sizeof(*sourceChunk->meshes.data) * sourceChunk->meshes.size;
 			Mesh* bufferMesh = (Mesh*)buffer.push(meshesSizeBytes);
@@ -118,7 +120,7 @@ namespace Cy
 
 					int facesSizeBytes = sizeof(*sourceSubMesh->faces.data) * sourceSubMesh->faces.size;
 					Face* bufferFaces = (Face*)buffer.push(facesSizeBytes);
-					destMesh->subMeshes.data = REL_PTR(bufferSubMesh, buffer.buffer);
+					destSubMesh->faces.data = REL_PTR(bufferFaces, buffer.buffer);
 					memcpy(bufferFaces, sourceSubMesh->faces.data, facesSizeBytes);
 
 					for (int currentFace = 0; currentFace < sourceSubMesh->faces.size; currentFace++)
