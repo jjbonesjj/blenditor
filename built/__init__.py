@@ -12,5 +12,5 @@ import convexify;
 
 def test():
     print("starting test.py")
-    convexify.testConvert();
+    convexify.testConvexify();
     print("completed test.py")

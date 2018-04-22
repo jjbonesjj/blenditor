@@ -198,6 +198,25 @@ static PyObject* testConvex(PyObject* self, PyObject* args)
 	return PyUnicode_FromString("done");	
 }
 
+static PyObject* testConvexify(PyObject* self, PyObject* args)
+{
+
+	Array<BFace> faces = { polys, 6 };
+	Array<BVertex> vertices = { verts , 8 };
+	BMesh mesh = { faces, vertices };
+
+	Array<BMesh> meshes = { &mesh, 1 };
+
+	BlenderData data = {};
+	data.meshes = meshes;
+
+	convexify(data);
+
+	// TODO remove bandaid...
+	CGAL::set_error_behaviour(CGAL::EXIT_WITH_SUCCESS);
+	return PyUnicode_FromString("done");
+}
+
 static PyObject* testConvert(PyObject* self, PyObject* args)
 {
 
@@ -231,20 +250,7 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 		printf("ERROR DATA\n");
 	}
 
-	if (data.meshes.size && data.meshes.data
-		&& data.meshes.data->vertices.data && data.meshes.data->vertices.size
-		&& data.meshes.data->faces.data && data.meshes.data->faces.size)
-	{
-		C_Polyhedron poly = makePolyhedron(data.meshes[0].vertices, data.meshes[0].faces);
-		//std::list<C_Polyhedron> convexParts = convexDecompose(poly);
-		//buildIndices(convexParts);
-		//Mesh mesh = polyhedraListToMesh(convexParts);
-		//unravelMesh(mesh);
-	}
-	else
-	{
-		printf("conversion error\n\n\n\n");
-	}
+	Array<Chunk> chunks = convexify(data);
 
 	CGAL::set_error_behaviour(CGAL::EXIT_WITH_SUCCESS);
 	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
@@ -332,6 +338,10 @@ static PyMethodDef convexifyMethods[] = {
 	},
 	{
 		"testConvert", testConvert, METH_NOARGS,
+		"prints out \"Hello Convexified World\""
+	},
+	{
+		"testConvexify", testConvexify, METH_NOARGS,
 		"prints out \"Hello Convexified World\""
 	},
 	{

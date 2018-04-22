@@ -7,8 +7,6 @@
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
-#include <CGAL/Polygon_mesh_processing/stitch_borders.h>
-#include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 #include "globals.h"
 #include "io.h"
 
@@ -72,12 +70,16 @@ namespace Cy
 			printf("POLY NOT CLOSED\n\n\n\n");
 		}
 
+		std::list<C_Polyhedron> polyList;
+		polyList.push_back(mesh);
+		buildIndices(polyList);
+
 		// edges etc. 
 		printf("hello7\n");
 		// ensure that the mesh orientation goes outward
-		//if (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh))
+		if (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh))
 		{
-			//CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+			CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
 		}
 		printf("hello9\n");
 		if (TRIANGULATE_MESHES)
@@ -286,6 +288,8 @@ namespace Cy
 
 			polygon.numVertices = PyObject_Length(vertices);
 
+			Assert(polygon.numVertices <= 4);
+
 			for (int j = 0; j < polygon.numVertices; j++)
 			{
 				PyObject* vertexIndex = PySequence_GetItem(vertices, j);
@@ -297,14 +301,12 @@ namespace Cy
 		return result;
 	}
 
-
-
 	Array<BMesh> extractMeshArray(PyObject* meshList)
 	{
 		Array<BMesh> result = {};
 		result.size = PyObject_Length(meshList);
 
-		result.data = (BMesh*)malloc(sizeof(BVertex)*result.size);
+		result.data = (BMesh*)malloc(sizeof(BMesh)*result.size);
 		for (int index = 0; index < result.size; index++)
 		{
 
