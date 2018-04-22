@@ -104,9 +104,9 @@ set_target_properties(  convexifyDLL PROPERTIES
 
 #link libraries to output binaries
 target_link_libraries(convexifyEXE Python)
-#target_link_libraries(convexifyEXE Python_d)
+target_link_libraries(convexifyEXE Python_d)
 target_link_libraries(convexifyEXE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
 
 target_link_libraries(convexifyDLL Python)
-#target_link_libraries(convexifyDLL Python_d)
+target_link_libraries(convexifyDLL Python_d)
 target_link_libraries(convexifyDLL ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
