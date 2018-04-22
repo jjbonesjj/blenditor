@@ -12,6 +12,98 @@
 
 using namespace Cy;
 
+namespace Cy
+{
+	Indices buildIndices(std::list<C_Polyhedron>& polyhedra)
+	{
+		// initialize the indices
+		Indices indices = {};
+
+		for (auto it = polyhedra.begin(); it != polyhedra.end(); it++)
+		{
+			if (TRIANGULATE_MESHES)
+			{
+				Assert(CGAL::Polygon_mesh_processing::triangulate_faces(*it));
+			}
+			for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
+			{
+				jt->id() = indices.vertexIndices++;
+			}
+
+			for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
+			{
+				jt->id() = indices.facetsIndices++;
+			}
+
+			for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
+			{
+				jt->id() = indices.edgeIndices++;
+			}
+		}
+
+		return indices;
+	}
+
+	void unravelMesh(Mesh mesh)
+	{
+		FOR(mesh.subMeshes, subMesh)
+		{
+			free(subMesh->faces.data);
+		}
+
+		free(mesh.subMeshes.data);
+		free(mesh.vertices.data);
+	}
+
+	void unravelChunks(Array<Chunk> chunks)
+	{
+		FOR(chunks, chunk)
+		{
+			FOR(chunk->meshes, mesh)
+			{
+				unravelMesh(*mesh);
+			}
+			free(chunk->meshes.data);
+		}
+
+		free(chunks.data);
+	}
+}
+
+// decompose a polyhedron to a list of convex polyhedra
+// note this function invalidates any and all indices
+std::list<C_Polyhedron> convexDecompose(C_Polyhedron& poly)
+{
+	auto nef = C_NefPolyhedron(poly);
+	printf("hello14\n");
+	Assert(nef.is_valid(VERBOSE_LOGGING));
+	printf("hello15\n");
+
+
+	printf("hello16\n");
+	CGAL::convex_decomposition_3(nef);
+	std::list<C_Polyhedron> convexParts;
+	printf("hello17\n");
+	// the first volume is the outer volume, which is 
+	// ignored in the decomposition
+	typedef C_NefPolyhedron::Volume_const_iterator Volume_const_iterator;
+	Volume_const_iterator ci = ++nef.volumes_begin();
+	for (; ci != nef.volumes_end(); ++ci) {
+		if (ci->mark()) {
+			C_Polyhedron P;
+			printf("hello21\n");
+			nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
+			printf("hello22\n");
+			convexParts.push_back(P);
+		}
+	}
+	printf("decomp into %zi convex parts\n", convexParts.size());
+
+	printf("END CONVEXIFY\n");
+
+	return convexParts;
+}
+
 Array<Chunk> convexify(BlenderData blenderData)
 {
 	Array<Chunk> chunks = {};
@@ -24,8 +116,8 @@ Array<Chunk> convexify(BlenderData blenderData)
 
 	FOR(blenderData.meshes, blenderMesh)
 	{
-		Array<Vertex> vertices = blenderMesh->vertices;
-		Array<Polygon> faces = blenderMesh->polygons;
+		Array<BVertex> vertices = blenderMesh->vertices;
+		Array<BFace> faces = blenderMesh->faces;
 
 		for (int i = 0; i < faces.size; i++)
 		{
@@ -41,65 +133,9 @@ Array<Chunk> convexify(BlenderData blenderData)
 
 
 		C_Polyhedron poly = makePolyhedron(vertices, faces);
-
-		auto nef = C_NefPolyhedron(poly);
-		printf("hello14\n");
-		Assert(nef.is_valid(VERBOSE_LOGGING));
-		printf("hello15\n");
-
-
-		printf("hello16\n");
-		CGAL::convex_decomposition_3(nef);
-		std::list<C_Polyhedron> convex_parts;
-		printf("hello17\n");
-		// the first volume is the outer volume, which is 
-		// ignored in the decomposition
-		typedef C_NefPolyhedron::Volume_const_iterator Volume_const_iterator;
-		Volume_const_iterator ci = ++nef.volumes_begin();
-		for (; ci != nef.volumes_end(); ++ci) {
-			if (ci->mark()) {
-				C_Polyhedron P;
-				printf("hello21\n");
-				nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
-				printf("hello22\n");
-				convex_parts.push_back(P);
-			}
-		}
-		printf("decomp into %zi convex parts\n", convex_parts.size());
-
-		printf("END CONVEXIFY\n");
-
-		// initialize the indices
-		int vertexIndices = 0;
-		int facetsIndices = 0;
-		int edgeIndices = 0;
-
-		for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
-		{
-			if (TRIANGULATE_MESHES)
-			{
-				printf("hello18\n");
-				Assert(CGAL::Polygon_mesh_processing::triangulate_faces(*it));
-			}
-			for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
-			{
-				jt->id() = vertexIndices++;
-			}
-
-			for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
-			{
-				jt->id() = facetsIndices++;
-			}
-
-			for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
-			{
-				jt->id() = edgeIndices++;
-			}
-		}
-
-		Mesh mesh = polyhedraListToMesh(convex_parts);
-
-		chunk->meshes[blenderMeshIndex] = mesh;
+		std::list<C_Polyhedron> convexParts = convexDecompose(poly);
+		Mesh mesh = polyhedraListToMesh(convexParts);
+		*chunk->meshes(blenderMeshIndex) = mesh;
 	}
 
 	buildCyLevel(chunks, "level1");
@@ -107,49 +143,77 @@ Array<Chunk> convexify(BlenderData blenderData)
 	return chunks;
 }
 
-static PyObject* test(PyObject* self, PyObject* args)
+BFace polys[6] =
+{	// NOTE: HACKY: first column is num indices
+	{ 4, 0, 1, 2, 3 },
+	{ 4, 4, 7, 6, 5 },
+	{ 4, 0, 4, 5, 1 },
+	{ 4, 1, 5, 6, 2 },
+	{ 4, 2, 6, 7, 3 },
+	{ 4, 4, 0, 3, 7 }
+};
+
+#if 1
+const float half = 0.5f;
+BVertex verts[8] =
 {
-	Polygon polys[6] = 
-	{	// NOTE: HACKY: first column is num indices
-		{ 4, 0, 1, 2, 3 },
-		{ 4, 4, 7, 6, 5 },
-		{ 4, 0, 4, 5, 1 },
-		{ 4, 1, 5, 6, 2 },
-		{ 4, 2, 6, 7, 3 },
-		{ 4, 4, 0, 3, 7 }
-	};
-	const float half = 0.5f;
-#if 0
-	Vertex verts[8] = 
-	{
-		{ half,		half,	-half	},
-		{ half,		-half,	-half	},
-		{ -half,	-half,	-half	},
-		{ -half,	half,	-half	},
-		{ half,		half,	half	},
-		{ half,		-half,	half	},
-		{ -half,	-half,	half	},
-		{ -half,	half,	half	},
-	};
+	{ half,		half,	-half },
+	{ half,		-half,	-half },
+	{ -half,	-half,	-half },
+	{ -half,	half,	-half },
+	{ half,		half,	half },
+	{ half,		-half,	half },
+	{ -half,	-half,	half },
+	{ -half,	half,	half },
+};
 #else
-	Vertex verts[8] =
-	{
-		{	1.0000000000, 0.9999999404, - 1.0000000000	},
-		{	1.0000000000, - 1.0000000000, - 1.0000000000 },
-		{	-1.0000001192, - 0.9999998212, - 1.0000000000 },
-		{	-0.9999996424, 1.0000003576, - 1.0000000000 },
-		{	1.0000004768, 0.9999994636, 1.0000000000 },
-		{	0.9999993443, - 1.0000005960, 1.0000000000 },
-		{	-1.0000003576, - 0.9999996424, 1.0000000000 },
-		{	-0.9999999404, 1.0000000000, 1.0000000000 }
-	};
+BVertex verts[8] =
+{
+	{ 1.0000000000, 0.9999999404, -1.0000000000 },
+	{ 1.0000000000, -1.0000000000, -1.0000000000 },
+	{ -1.0000001192, -0.9999998212, -1.0000000000 },
+	{ -0.9999996424, 1.0000003576, -1.0000000000 },
+	{ 1.0000004768, 0.9999994636, 1.0000000000 },
+	{ 0.9999993443, -1.0000005960, 1.0000000000 },
+	{ -1.0000003576, -0.9999996424, 1.0000000000 },
+	{ -0.9999999404, 1.0000000000, 1.0000000000 }
+};
 #endif
-	Array<Polygon> faces = { polys, 6 };
-	Array<Vertex> vertices = { verts , 8 };
 
-	Mesh mesh = convexify(vertices, faces);
+static PyObject* testConvex(PyObject* self, PyObject* args)
+{
 
+	Array<BFace> faces = { polys, 6 };
+	Array<BVertex> vertices = { verts , 8 };
+
+	C_Polyhedron poly = makePolyhedron(vertices, faces);
+	std::list<C_Polyhedron> convexParts = convexDecompose(poly);
+	buildIndices(convexParts);
+	Mesh mesh = polyhedraListToMesh(convexParts);
+
+	unravelMesh(mesh);
+
+	// TODO remove bandaid...
+	CGAL::set_error_behaviour(CGAL::EXIT_WITH_SUCCESS);
 	return PyUnicode_FromString("done");	
+}
+
+static PyObject* testConvert(PyObject* self, PyObject* args)
+{
+
+	Array<BFace> faces = { polys, 6 };
+	Array<BVertex> vertices = { verts , 8 };
+
+	C_Polyhedron poly = makePolyhedron(vertices, faces);
+	std::list<C_Polyhedron> convexParts;
+	convexParts.push_back(poly);
+	Mesh mesh = polyhedraListToMesh(convexParts);
+
+	unravelMesh(mesh);
+
+	// TODO remove bandaid...
+	CGAL::set_error_behaviour(CGAL::EXIT_WITH_SUCCESS);
+	return PyUnicode_FromString("done");
 }
 
 static PyObject* convexifyMesh(PyObject* self, PyObject* args)
@@ -166,9 +230,23 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 	{
 		printf("ERROR DATA\n");
 	}
-	
-	Mesh mesh = convexify(data.meshes[0].vertices, data.meshes[0].polygons);
 
+	if (data.meshes.size && data.meshes.data
+		&& data.meshes.data->vertices.data && data.meshes.data->vertices.size
+		&& data.meshes.data->faces.data && data.meshes.data->faces.size)
+	{
+		C_Polyhedron poly = makePolyhedron(data.meshes[0].vertices, data.meshes[0].faces);
+		//std::list<C_Polyhedron> convexParts = convexDecompose(poly);
+		//buildIndices(convexParts);
+		//Mesh mesh = polyhedraListToMesh(convexParts);
+		//unravelMesh(mesh);
+	}
+	else
+	{
+		printf("conversion error\n\n\n\n");
+	}
+
+	CGAL::set_error_behaviour(CGAL::EXIT_WITH_SUCCESS);
 	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
 }
 
@@ -187,7 +265,11 @@ static PyObject* levelify(PyObject* self, PyObject* args)
 		printf("ERROR DATA\n");
 	}
 
-	Mesh mesh = convexify(data.meshes[0].vertices, data.meshes[0].polygons);
+	C_Polyhedron poly = makePolyhedron(data.meshes[0].vertices, data.meshes[0].faces);
+	std::list<C_Polyhedron> convexParts;
+	convexParts.push_back(poly);
+	buildIndices(convexParts);
+	Mesh mesh = polyhedraListToMesh(convexParts);
 	
 	Chunk chunk = {};
 	chunk.meshes.data = &mesh;
@@ -200,6 +282,10 @@ static PyObject* levelify(PyObject* self, PyObject* args)
 	printf("hello20\n");
 	buildCyLevel(chunks, "level1");
 
+	unravelMesh(mesh);
+
+	// TODO remove bandaid...
+	CGAL::set_error_behaviour(CGAL::EXIT_WITH_SUCCESS);
 	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
 }
 
@@ -241,12 +327,20 @@ EXPORT BlenderPoint sumPointArray(BlenderPoint* arr, int size)
 
 static PyMethodDef convexifyMethods[] = {
 	{
-		"test", test, METH_NOARGS,
+		"testConvex", testConvex, METH_NOARGS,
+		"prints out \"Hello Convexified World\""
+	},
+	{
+		"testConvert", testConvert, METH_NOARGS,
 		"prints out \"Hello Convexified World\""
 	},
 	{
 		"convexifyMesh", convexifyMesh, METH_VARARGS,
 		"attempts to conexify a mesh"
+	},
+	{
+		"levelify", levelify, METH_VARARGS,
+		"attempts to directly convert geometry to level file"
 	},
 	{ NULL, NULL, 0, NULL }
 };

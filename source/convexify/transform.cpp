@@ -7,16 +7,24 @@
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
+#include <CGAL/Polygon_mesh_processing/stitch_borders.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 #include "globals.h"
 #include "io.h"
 
+#include <tuple>
 #include <vector>
 #include <CGAL/IO/OFF_reader.h>
 
 namespace Cy
 {
-	C_Polyhedron makePolyhedron(Array<Vertex> vertices, Array<Polygon> faces)
+	C_Polyhedron makePolyhedron(Array<BVertex> vertices, Array<BFace> faces)
 	{
+		if (!vertices.size)
+		{
+			// todo lets do better than this...
+			exit(255);
+		}
 
 		std::vector<CK_Point> points;
 		std::vector<std::vector<size_t>> polygons;
@@ -52,27 +60,30 @@ namespace Cy
 			printf("some points were duped when orienting polygon soup\n");
 		}
 		printf("hello4\n");
-		C_Polyhedron mesh = {};
+		C_Polyhedron mesh;
+
 		CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, mesh);
 		printf("hello5\n");
+		printf("bleh\n");
 		Assert(is_valid(mesh, VERBOSE_LOGGING));
 		printf("hello6\n");
-		Assert(is_closed(mesh));
+		if (!is_closed(mesh))
+		{
+			printf("POLY NOT CLOSED\n\n\n\n");
+		}
 
 		// edges etc. 
-
 		printf("hello7\n");
 		// ensure that the mesh orientation goes outward
-		if (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh))
+		//if (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh))
 		{
-			printf("hello8\n");
-			CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+			//CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
 		}
 		printf("hello9\n");
 		if (TRIANGULATE_MESHES)
 		{
 			printf("hello10\n");
-			Assert(CGAL::Polygon_mesh_processing::triangulate_faces(mesh));
+			CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
 		}
 		printf("hello11\n");
 		Assert(is_valid(mesh, VERBOSE_LOGGING));
@@ -85,33 +96,8 @@ namespace Cy
 
 	Mesh polyhedraListToMesh(std::list<C_Polyhedron> polyhedra)
 	{
-		// initialize the indices
-		int vertexIndices = 0;
-		int facetsIndices = 0;
-		int edgeIndices = 0;
+		Indices indices = buildIndices(polyhedra);
 
-		for (auto it = polyhedra.begin(); it != polyhedra.end(); it++)
-		{
-			if (TRIANGULATE_MESHES)
-			{
-				printf("hello18\n");
-				Assert(CGAL::Polygon_mesh_processing::triangulate_faces(*it));
-			}
-			for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
-			{
-				jt->id() = vertexIndices++;
-			}
-
-			for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
-			{
-				jt->id() = facetsIndices++;
-			}
-
-			for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
-			{
-				jt->id() = edgeIndices++;
-			}
-		}
 		u64 faceCount = 0;
 
 		// build the mesh
@@ -119,7 +105,7 @@ namespace Cy
 		mesh.subMeshes.size = polyhedra.size();
 		mesh.subMeshes.data = (SubMesh*)malloc(sizeof(SubMesh) * mesh.subMeshes.size);
 
-		mesh.vertices.size = vertexIndices;
+		mesh.vertices.size = indices.vertexIndices;
 		mesh.vertices.data = (Point*)malloc(sizeof(Point) * mesh.vertices.size);
 		int subMeshCounter = 0;
 
@@ -185,8 +171,6 @@ namespace Cy
 	// todo remove?
 	Array<Chunk> convertBlenderDataToLevelFormat(BlenderData blenderData)
 	{
-		Array<Chunk> chunks;
-
 		Chunk* chunk = (Chunk*)malloc(sizeof(Chunk));
 
 		Array<Chunk> chunks = {};
@@ -198,12 +182,12 @@ namespace Cy
 		meshes->data = (Mesh*)malloc(meshes->size * sizeof(Mesh));
 
 		Mesh* mesh = meshes->data;
-		BlenderMesh* blenderMesh = blenderData.meshes.data;
+		BMesh* blenderMesh = blenderData.meshes.data;
 		for (u32 meshIndex = 0; meshIndex < meshes->size; meshIndex++, mesh++, blenderMesh++)
 		{
 			// copy the vertices
 			Point* points = mesh->vertices.data;
-			Vertex* blenderVertex = blenderMesh->vertices.data;
+			BVertex* blenderVertex = blenderMesh->vertices.data;
 			for (u32 vertexIndex = 0; vertexIndex < mesh->vertices.size; vertexIndex++, points++, blenderVertex++)
 			{
 				points->posFloating[0] = blenderVertex->coords.x;
@@ -218,11 +202,11 @@ namespace Cy
 
 			SubMesh* subMesh = mesh->subMeshes.data;
 
-			subMesh->faces.size = blenderMesh->polygons.size;
+			subMesh->faces.size = blenderMesh->faces.size;
 			subMesh->faces.data = (Face*)malloc(subMesh->faces.size * sizeof(Face));
 
 			Face* faces = subMesh->faces.data;
-			Polygon* blenderFaces = blenderMesh->polygons.data;
+			BFace* blenderFaces = blenderMesh->faces.data;
 			for (u32 faceIndex = 0; faceIndex < subMesh->faces.size; faceIndex++, faces++, blenderFaces++)
 			{
 				if (blenderFaces->numVertices == 3)
@@ -235,6 +219,8 @@ namespace Cy
 			}
 
 		}
+
+		return chunks;
 	}
 
 
@@ -244,18 +230,18 @@ namespace Cy
 #define PRINT_PY(object) { PyObject* objectPath = PyObject_Repr(object); const char* s = PyUnicode_AsUTF8(objectPath); const char* type = object->ob_type->tp_name; printf("%s : %s\n", type,  s); }
 
 
-	Array<Vertex> extractVertexArray(PyObject* vertexList)
+	Array<BVertex> extractVertexArray(PyObject* vertexList)
 	{
-		Array<Vertex> result = {};
+		Array<BVertex> result = {};
 		result.size = PyObject_Length(vertexList);
 
-		result.data = (Vertex*)malloc(sizeof(Vertex)*result.size);
+		result.data = (BVertex*)malloc(sizeof(BVertex)*result.size);
 		for (int i = 0; i < result.size; i++)
 		{
 
 			PyObject* item = PySequence_GetItem(vertexList, i);
 
-			Vertex vertex = {};
+			BVertex vertex = {};
 
 			GET_ATTR(item, co);
 			GET_ATTR(item, normal);
@@ -285,17 +271,17 @@ namespace Cy
 		return result;
 	}
 
-	Array<Polygon> extractPolygonArray(PyObject* facesList)
+	Array<BFace> extractPolygonArray(PyObject* facesList)
 	{
-		Array<Polygon> result = {};
+		Array<BFace> result = {};
 		result.size = PyObject_Length(facesList);
 
-		result.data = (Polygon*)malloc(sizeof(Vertex)*result.size);
+		result.data = (BFace*)malloc(sizeof(BFace)*result.size);
 		for (int index = 0; index < result.size; index++)
 		{
 			PyObject* item = PySequence_GetItem(facesList, index);
 
-			Polygon polygon = {};
+			BFace polygon = {};
 			GET_ATTR(item, vertices);
 
 			polygon.numVertices = PyObject_Length(vertices);
@@ -313,24 +299,24 @@ namespace Cy
 
 
 
-	Array<BlenderMesh> extractMeshArray(PyObject* meshList)
+	Array<BMesh> extractMeshArray(PyObject* meshList)
 	{
-		Array<BlenderMesh> result = {};
+		Array<BMesh> result = {};
 		result.size = PyObject_Length(meshList);
 
-		result.data = (BlenderMesh *)malloc(sizeof(Vertex)*result.size);
+		result.data = (BMesh*)malloc(sizeof(BVertex)*result.size);
 		for (int index = 0; index < result.size; index++)
 		{
 
 			PyObject* item = PySequence_GetItem(meshList, index);
 
-			BlenderMesh mesh = {};
+			BMesh mesh = {};
 
 			GET_ATTR(item, polygons);
 			GET_ATTR(item, vertices);
 
 			printf("extract mesh array %i\n", index);
-			mesh.polygons = extractPolygonArray(polygons);
+			mesh.faces = extractPolygonArray(polygons);
 			mesh.vertices = extractVertexArray(vertices);
 			printf("extract mesh array2 %i\n", index);
 			result.data[index] = mesh;
@@ -342,7 +328,6 @@ namespace Cy
 	{
 
 		BlenderData internal = {};
-
 
 		PyObject* blenderData = nullptr;
 		PyObject* blenderContext = nullptr;

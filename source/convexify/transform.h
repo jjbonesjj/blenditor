@@ -1,19 +1,20 @@
 #pragma once
 #include "convexify.h"
-
+#include <list>
+#include "io.h"
 
 namespace Cy
 {
-	C_Polyhedron makePolyhedron(Array<Vertex> vertices, Array<Polygon> polygons);
+	C_Polyhedron makePolyhedron(Array<BVertex> vertices, Array<BFace> polygons);
 	Mesh polyhedraListToMesh(std::list<C_Polyhedron> polyhedra);
 
 	struct BlenderData
 	{
 		bool valid;
-		Array<Material> materials;
-		Array<BlenderMesh> meshes;
-		Array<Object> objects;
-		Array<Texture> textures;
+		Array<BMaterial> materials;
+		Array<BMesh> meshes;
+		Array<BObject> objects;
+		Array<BTexture> textures;
 	};
 
 	BlenderData extractData(PyObject* blenderData);

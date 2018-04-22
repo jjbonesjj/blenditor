@@ -152,6 +152,7 @@ namespace Cy
 			file.close();
 		}
 
+		free(buffer.buffer);
 	}
 }
 #undef PREREPETITIVE

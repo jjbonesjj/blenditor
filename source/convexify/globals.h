@@ -1,7 +1,7 @@
 #pragma once
 
 
-const bool VERBOSE_LOGGING = false;
+const bool VERBOSE_LOGGING = true;
 
 // **********************************
 // WARNING: if triangulation is off, 

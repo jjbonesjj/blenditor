@@ -10,6 +10,12 @@
 #include <CGAL/convex_decomposition_3.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polyhedron_items_with_id_3.h> 
+#include <CGAL/assertions_behaviour.h>
+
+#include <stdint.h>
+
+typedef uint32_t u32;
+typedef uint64_t u64;
 
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt				C_Kernel;
@@ -21,6 +27,9 @@ typedef CGAL::Surface_mesh<CK_Point>											C_Mesh;
 typedef C_Kernel::Weighted_point_3												C_Weight;
 
 typedef C_Polyhedron::HalfedgeDS												C_Halfedge;
+typedef C_Polyhedron::Halfedge													C_HalfedgeNorm;
+typedef C_Polyhedron::Facet														C_Facet;
+
 typedef C_NefPolyhedron::Halfedge												C_NefHalfedge;
 typedef typename C_Halfedge::Vertex												C_Vertex;
 typedef typename C_Vertex														CH_Point;
@@ -47,7 +56,7 @@ namespace Cy
 	{
 		// NOTE: DO NOT CHANGE THE ORDER OF THIS STRUCT
 		T* data;
-		int size;
+		u64 size;
 
 
 		T operator[](size_t index)
@@ -63,7 +72,7 @@ namespace Cy
 
 #define FOR(arr, it) u64 it##Index = 0; for(decltype(arr.data) it = arr.data; it < arr.data + arr.size; it++, it##Index++)
 
-	struct Polygon
+	struct BFace
 	{
 		int numVertices;
 		int vertices[4];
@@ -74,36 +83,46 @@ namespace Cy
 		double x, y, z;
 	};
 
-	struct Vertex
+	struct BVertex
 	{
 		Vector coords;
 		Vector normal;
 		int index;
 	};
 
-	struct Material
+	struct BMaterial
 	{
 
 	};
 
-	struct BlenderMesh
+	struct BMesh
 	{
-		Array<Polygon> polygons;
-		Array<Vertex> vertices;
+		Array<BFace> faces;
+		Array<BVertex> vertices;
 	};
 
-	struct Object
-	{
-
-	};
-
-	struct Texture
+	struct BObject
 	{
 
 	};
+
+	struct BTexture
+	{
+
+	};
+
+	struct Indices
+	{
+		int vertexIndices = 0;
+		int facetsIndices = 0;
+		int edgeIndices = 0;
+	};
+
+	Indices buildIndices(std::list<C_Polyhedron>& polyhedra);
 }
 
 #define EXPORT extern "C" __declspec(dllexport)
 
 // FOR NOW, this tool will only be used by me, so FOR NOW this is sufficient.
 #define Assert(test, message, ...) if(!(test)) { *(int*)0 = 0; }
+

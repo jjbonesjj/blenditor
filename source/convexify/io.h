@@ -1,16 +1,16 @@
 #pragma once
 
 #include "convexify.h"
-#include <stdint.h>
+
 #include <iostream>
 #include <fstream>
 #include "globals.h"
 
-typedef uint32_t u32;
+
 typedef u32 absOffset;
 typedef u32 relOffset;
 
-typedef uint64_t u64;
+
 
 static const int MAGIC_LEN = 16;
 static const int MAGIC_LEN_MINOR = 4;
