@@ -12,152 +12,99 @@
 
 using namespace Cy;
 
-Mesh convexify(Array<Vertex> vertices, Array<Polygon> faces)
+Array<Chunk> convexify(BlenderData blenderData)
 {
-
-	for (int i = 0; i < faces.size; i++)
-	{
-#define lazy(num) faces[i].vertices[num]
-		printf("polygon: %i %i %i %i\n", lazy(0), lazy(1), lazy(2), lazy(3));
-	}
-
-	for (int i = 0; i < vertices.size; i++)
-	{
-#define lazy2 vertices[i].coords
-		printf("vertex: %.10f %.10f %.10f\n", lazy2.x, lazy2.y, lazy2.z);
-	}
-
-
-	C_NefPolyhedron nef = make_nef(vertices, faces);
-	printf("hello16\n");
-	CGAL::convex_decomposition_3(nef);
-	std::list<C_Polyhedron> convex_parts;
-	printf("hello17\n");
-	// the first volume is the outer volume, which is 
-	// ignored in the decomposition
-	typedef C_NefPolyhedron::Volume_const_iterator Volume_const_iterator;
-	Volume_const_iterator ci = ++nef.volumes_begin();
-	for (; ci != nef.volumes_end(); ++ci) {
-		if (ci->mark()) {
-			C_Polyhedron P;
-			printf("hello21\n");
-			nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
-			printf("hello22\n");
-			convex_parts.push_back(P);
-		}
-	}
-	printf("decomp into %zi convex parts\n", convex_parts.size());
-
-	printf("END CONVEXIFY\n");
-
-	// initialize the indices
-	int vertexIndices = 0;
-	int facetsIndices = 0;
-	int edgeIndices = 0;
-	
-	for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
-	{
-		if (TRIANGULATE_MESHES)
-		{
-			printf("hello18\n");
-			Assert(CGAL::Polygon_mesh_processing::triangulate_faces(*it));
-		}
-		for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
-		{
-			jt->id() = vertexIndices++;
-		}
-
-		for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
-		{
-			jt->id() = facetsIndices++;
-		}
-
-		for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
-		{
-			jt->id() = edgeIndices++;
-		}
-	}
-
-	u64 faceCount = 0;
-	
-	// build the mesh
-	Mesh mesh = {};
-	mesh.subMeshes.size = convex_parts.size();
-	mesh.subMeshes.data = (SubMesh*)malloc(sizeof(SubMesh) * mesh.subMeshes.size);
-
-	mesh.vertices.size = vertexIndices;
-	mesh.vertices.data = (Point*)malloc(sizeof(Point) * mesh.vertices.size);
-	int subMeshCounter = 0;
-
-	for (auto cmesh = convex_parts.begin(); cmesh != convex_parts.end(); cmesh++)
-	{
-		std::map<C_FaceDescriptor, C_Vector> fnormals;
-		std::map<C_VertexDescriptor, C_Vector> vnormals;
-		printf("hello19\n");
-		CGAL::Polygon_mesh_processing::compute_normals(*cmesh,
-													   boost::make_assoc_property_map(vnormals),
-													   boost::make_assoc_property_map(fnormals));
-
-		SubMesh subMesh = {};
-		subMesh.faces.size = cmesh->size_of_facets();
-		subMesh.faces.data = (Face*)malloc(sizeof(Face) * subMesh.faces.size);
-		int facetsCounter = 0;
-		for (C_Polyhedron::Face_iterator face = cmesh->facets_begin();
-			 face != cmesh->facets_end();
-			 face++, facetsCounter++)
-		{
-			C_Polyhedron::Halfedge_around_facet_circulator circ = face->facet_begin();
-
-			int facetCounter = 0;
-			std::cout << "Vertex indices of facet: " << face->id();
-			do {
-				std::cout << " [" << circ->vertex()->id() << "] ";
-				std::cout << "{ " << circ->vertex()->point().x() << " ";
-				std::cout << circ->vertex()->point().y() << " ";
-				std::cout << circ->vertex()->point().z() << " } ";
-
-				size_t index = circ->vertex()->id();
-				subMesh.faces(facetsCounter)->indices[facetCounter] = index;
-				
-				facetCounter++;
-			} while (++circ != face->facet_begin());
-			std::cout << '\n';
-			Assert(facetCounter == 3);
-
-			subMesh.faces(facetsCounter)->normal[0] = fnormals[face].x().floatValue();
-			subMesh.faces(facetsCounter)->normal[1] = fnormals[face].y().floatValue();
-			subMesh.faces(facetsCounter)->normal[2] = fnormals[face].z().floatValue();
-			faceCount++;
-		}
-
-		*mesh.subMeshes(subMeshCounter) = subMesh;
-		subMeshCounter++;
-
-		// get vertices
-		int meshVertexCounter = 0;
-		for (C_Polyhedron::Vertex_iterator vertex = cmesh->vertices_begin(); vertex  != cmesh->vertices_end(); vertex++)
-		{
-			mesh.vertices(meshVertexCounter)->posFloating[0] = (float)vertex->point().x().doubleValue();
-			mesh.vertices(meshVertexCounter)->posFloating[1] = (float)vertex->point().y().doubleValue();
-			mesh.vertices(meshVertexCounter)->posFloating[2] = (float)vertex->point().z().doubleValue();
-			meshVertexCounter++;
-		}
-	}
-
-	// todo do this properly
-	Chunk chunk = {};
-	chunk.meshes.size = 1;
-	chunk.meshes.data = &mesh;
-	chunk.subMeshCount = subMeshCounter;
-	chunk.faceCount = faceCount;
-	
 	Array<Chunk> chunks = {};
 	chunks.size = 1;
-	chunks.data = &chunk;
-	printf("hello20\n");
+	chunks.data = (Chunk*)malloc(sizeof(Chunk));
+
+	Chunk* chunk = chunks.data;
+	chunk->meshes.size = blenderData.meshes.size;
+	chunk->meshes.data = (Mesh*)malloc(chunk->meshes.size * sizeof(Mesh));
+
+	FOR(blenderData.meshes, blenderMesh)
+	{
+		Array<Vertex> vertices = blenderMesh->vertices;
+		Array<Polygon> faces = blenderMesh->polygons;
+
+		for (int i = 0; i < faces.size; i++)
+		{
+#define lazy(num) faces[i].vertices[num]
+			printf("polygon: %i %i %i %i\n", lazy(0), lazy(1), lazy(2), lazy(3));
+		}
+
+		for (int i = 0; i < vertices.size; i++)
+		{
+#define lazy2 vertices[i].coords
+			printf("vertex: %.10f %.10f %.10f\n", lazy2.x, lazy2.y, lazy2.z);
+		}
+
+
+		C_Polyhedron poly = makePolyhedron(vertices, faces);
+
+		auto nef = C_NefPolyhedron(poly);
+		printf("hello14\n");
+		Assert(nef.is_valid(VERBOSE_LOGGING));
+		printf("hello15\n");
+
+
+		printf("hello16\n");
+		CGAL::convex_decomposition_3(nef);
+		std::list<C_Polyhedron> convex_parts;
+		printf("hello17\n");
+		// the first volume is the outer volume, which is 
+		// ignored in the decomposition
+		typedef C_NefPolyhedron::Volume_const_iterator Volume_const_iterator;
+		Volume_const_iterator ci = ++nef.volumes_begin();
+		for (; ci != nef.volumes_end(); ++ci) {
+			if (ci->mark()) {
+				C_Polyhedron P;
+				printf("hello21\n");
+				nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), P);
+				printf("hello22\n");
+				convex_parts.push_back(P);
+			}
+		}
+		printf("decomp into %zi convex parts\n", convex_parts.size());
+
+		printf("END CONVEXIFY\n");
+
+		// initialize the indices
+		int vertexIndices = 0;
+		int facetsIndices = 0;
+		int edgeIndices = 0;
+
+		for (auto it = convex_parts.begin(); it != convex_parts.end(); it++)
+		{
+			if (TRIANGULATE_MESHES)
+			{
+				printf("hello18\n");
+				Assert(CGAL::Polygon_mesh_processing::triangulate_faces(*it));
+			}
+			for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
+			{
+				jt->id() = vertexIndices++;
+			}
+
+			for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
+			{
+				jt->id() = facetsIndices++;
+			}
+
+			for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
+			{
+				jt->id() = edgeIndices++;
+			}
+		}
+
+		Mesh mesh = polyhedraListToMesh(convex_parts);
+
+		chunk->meshes[blenderMeshIndex] = mesh;
+	}
+
 	buildCyLevel(chunks, "level1");
 
-	return mesh;
+	return chunks;
 }
 
 static PyObject* test(PyObject* self, PyObject* args)
@@ -221,6 +168,37 @@ static PyObject* convexifyMesh(PyObject* self, PyObject* args)
 	}
 	
 	Mesh mesh = convexify(data.meshes[0].vertices, data.meshes[0].polygons);
+
+	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
+}
+
+static PyObject* levelify(PyObject* self, PyObject* args)
+{
+	printf("STARTING CONVEXIFY\n");
+
+	BlenderData data = extractData(args);
+
+	if (data.valid)
+	{
+		printf("SUCCESS DATA\n");
+	}
+	else
+	{
+		printf("ERROR DATA\n");
+	}
+
+	Mesh mesh = convexify(data.meshes[0].vertices, data.meshes[0].polygons);
+	
+	Chunk chunk = {};
+	chunk.meshes.data = &mesh;
+	chunk.meshes.size = 1;
+
+	Array<Chunk> chunks = {};
+	chunks.size = 1;
+	chunks.data = &chunk;
+
+	printf("hello20\n");
+	buildCyLevel(chunks, "level1");
 
 	return PyUnicode_FromString("argsuccess: return: hello arg'd world!");
 }

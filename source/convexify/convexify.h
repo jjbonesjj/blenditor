@@ -61,6 +61,8 @@ namespace Cy
 		}
 	};
 
+#define FOR(arr, it) u64 it##Index = 0; for(decltype(arr.data) it = arr.data; it < arr.data + arr.size; it++, it##Index++)
+
 	struct Polygon
 	{
 		int numVertices;

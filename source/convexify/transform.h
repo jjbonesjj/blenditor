@@ -1,10 +1,11 @@
 #pragma once
 #include "convexify.h"
 
+
 namespace Cy
 {
-	C_NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> polygons);
-
+	C_Polyhedron makePolyhedron(Array<Vertex> vertices, Array<Polygon> polygons);
+	Mesh polyhedraListToMesh(std::list<C_Polyhedron> polyhedra);
 
 	struct BlenderData
 	{

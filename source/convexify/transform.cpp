@@ -8,13 +8,14 @@
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 #include "globals.h"
+#include "io.h"
 
 #include <vector>
 #include <CGAL/IO/OFF_reader.h>
 
 namespace Cy
 {
-	C_NefPolyhedron make_nef(Array<Vertex> vertices, Array<Polygon> faces)
+	C_Polyhedron makePolyhedron(Array<Vertex> vertices, Array<Polygon> faces)
 	{
 
 		std::vector<CK_Point> points;
@@ -58,22 +59,6 @@ namespace Cy
 		printf("hello6\n");
 		Assert(is_closed(mesh));
 
-		/*int i = 0;
-		for (C_Polyhedron::Vertex_iterator it = mesh.vertices_begin(); it != mesh.vertices_end(); it++)
-		{
-			it->id() = i++;
-		}
-		i = 0;
-		for (C_Polyhedron::Facet_iterator it = mesh.facets_begin(); it != mesh.facets_end(); it++)
-		{
-			it->id() = i++;
-		}
-		i = 0;
-		for (C_Polyhedron::Edge_iterator it = mesh.edges_begin(); it != mesh.edges_end(); it++)
-		{
-			it->id() = i++;
-		}*/
-
 		// edges etc. 
 
 		printf("hello7\n");
@@ -94,11 +79,162 @@ namespace Cy
 		printf("hello12\n");
 		Assert(is_closed(mesh));
 		printf("hello13\n");
-		auto nef = C_NefPolyhedron(mesh);
-		printf("hello14\n");
-		Assert(nef.is_valid(VERBOSE_LOGGING));
-		printf("hello15\n");
-		return nef;
+
+		return mesh;
+	}
+
+	Mesh polyhedraListToMesh(std::list<C_Polyhedron> polyhedra)
+	{
+		// initialize the indices
+		int vertexIndices = 0;
+		int facetsIndices = 0;
+		int edgeIndices = 0;
+
+		for (auto it = polyhedra.begin(); it != polyhedra.end(); it++)
+		{
+			if (TRIANGULATE_MESHES)
+			{
+				printf("hello18\n");
+				Assert(CGAL::Polygon_mesh_processing::triangulate_faces(*it));
+			}
+			for (C_Polyhedron::Vertex_iterator jt = it->vertices_begin(); jt != it->vertices_end(); jt++)
+			{
+				jt->id() = vertexIndices++;
+			}
+
+			for (C_Polyhedron::Facet_iterator jt = it->facets_begin(); jt != it->facets_end(); jt++)
+			{
+				jt->id() = facetsIndices++;
+			}
+
+			for (C_Polyhedron::Edge_iterator jt = it->edges_begin(); jt != it->edges_end(); jt++)
+			{
+				jt->id() = edgeIndices++;
+			}
+		}
+		u64 faceCount = 0;
+
+		// build the mesh
+		Mesh mesh = {};
+		mesh.subMeshes.size = polyhedra.size();
+		mesh.subMeshes.data = (SubMesh*)malloc(sizeof(SubMesh) * mesh.subMeshes.size);
+
+		mesh.vertices.size = vertexIndices;
+		mesh.vertices.data = (Point*)malloc(sizeof(Point) * mesh.vertices.size);
+		int subMeshCounter = 0;
+
+		for (auto cmesh = polyhedra.begin(); cmesh != polyhedra.end(); cmesh++)
+		{
+			std::map<C_FaceDescriptor, C_Vector> fnormals;
+			std::map<C_VertexDescriptor, C_Vector> vnormals;
+			printf("hello19\n");
+			CGAL::Polygon_mesh_processing::compute_normals(*cmesh,
+														   boost::make_assoc_property_map(vnormals),
+														   boost::make_assoc_property_map(fnormals));
+
+			SubMesh subMesh = {};
+			subMesh.faces.size = cmesh->size_of_facets();
+			subMesh.faces.data = (Face*)malloc(sizeof(Face) * subMesh.faces.size);
+			int facetsCounter = 0;
+			for (C_Polyhedron::Face_iterator face = cmesh->facets_begin();
+				 face != cmesh->facets_end();
+				 face++, facetsCounter++)
+			{
+				C_Polyhedron::Halfedge_around_facet_circulator circ = face->facet_begin();
+
+				int facetCounter = 0;
+				std::cout << "Vertex indices of facet: " << face->id();
+				do {
+					std::cout << " [" << circ->vertex()->id() << "] ";
+					std::cout << "{ " << circ->vertex()->point().x() << " ";
+					std::cout << circ->vertex()->point().y() << " ";
+					std::cout << circ->vertex()->point().z() << " } ";
+
+					size_t index = circ->vertex()->id();
+					subMesh.faces(facetsCounter)->indices[facetCounter] = index;
+
+					facetCounter++;
+				} while (++circ != face->facet_begin());
+				std::cout << '\n';
+				Assert(facetCounter == 3);
+
+				subMesh.faces(facetsCounter)->normal[0] = fnormals[face].x().floatValue();
+				subMesh.faces(facetsCounter)->normal[1] = fnormals[face].y().floatValue();
+				subMesh.faces(facetsCounter)->normal[2] = fnormals[face].z().floatValue();
+				faceCount++;
+			}
+
+			*mesh.subMeshes(subMeshCounter) = subMesh;
+			subMeshCounter++;
+
+			// get vertices
+			int meshVertexCounter = 0;
+			for (C_Polyhedron::Vertex_iterator vertex = cmesh->vertices_begin(); vertex != cmesh->vertices_end(); vertex++)
+			{
+				mesh.vertices(meshVertexCounter)->posFloating[0] = (float)vertex->point().x().doubleValue();
+				mesh.vertices(meshVertexCounter)->posFloating[1] = (float)vertex->point().y().doubleValue();
+				mesh.vertices(meshVertexCounter)->posFloating[2] = (float)vertex->point().z().doubleValue();
+				meshVertexCounter++;
+			}
+		}
+
+		return mesh;
+	}
+
+
+	// todo remove?
+	Array<Chunk> convertBlenderDataToLevelFormat(BlenderData blenderData)
+	{
+		Array<Chunk> chunks;
+
+		Chunk* chunk = (Chunk*)malloc(sizeof(Chunk));
+
+		Array<Chunk> chunks = {};
+		chunks.size = 1;
+		chunks.data = chunk;
+
+		Array<Mesh>* meshes = &chunk->meshes;
+		meshes->size = blenderData.meshes.size;
+		meshes->data = (Mesh*)malloc(meshes->size * sizeof(Mesh));
+
+		Mesh* mesh = meshes->data;
+		BlenderMesh* blenderMesh = blenderData.meshes.data;
+		for (u32 meshIndex = 0; meshIndex < meshes->size; meshIndex++, mesh++, blenderMesh++)
+		{
+			// copy the vertices
+			Point* points = mesh->vertices.data;
+			Vertex* blenderVertex = blenderMesh->vertices.data;
+			for (u32 vertexIndex = 0; vertexIndex < mesh->vertices.size; vertexIndex++, points++, blenderVertex++)
+			{
+				points->posFloating[0] = blenderVertex->coords.x;
+				points->posFloating[1] = blenderVertex->coords.y;
+				points->posFloating[2] = blenderVertex->coords.z;
+			}
+
+			// copy the faces
+			// since this path is not performing a convexification, there is only ever 1 submesh
+			mesh->subMeshes.size = 1;
+			mesh->subMeshes.data = (SubMesh*)malloc(sizeof(SubMesh));
+
+			SubMesh* subMesh = mesh->subMeshes.data;
+
+			subMesh->faces.size = blenderMesh->polygons.size;
+			subMesh->faces.data = (Face*)malloc(subMesh->faces.size * sizeof(Face));
+
+			Face* faces = subMesh->faces.data;
+			Polygon* blenderFaces = blenderMesh->polygons.data;
+			for (u32 faceIndex = 0; faceIndex < subMesh->faces.size; faceIndex++, faces++, blenderFaces++)
+			{
+				if (blenderFaces->numVertices == 3)
+				{
+					faces->indices[0] = blenderFaces->vertices[0];
+					faces->indices[1] = blenderFaces->vertices[1];
+					faces->indices[2] = blenderFaces->vertices[2];
+				}
+				
+			}
+
+		}
 	}
 
 
